@@ -49,7 +49,7 @@ def draw_square(img_file, middle_pos, length):
         width=10
     )
 
-    img.save(FILE_NAME)
+    img.save(img_file)
 
 TARGET_HEX = "#b43384"
 FILE_NAME = "detect.jpg"
@@ -66,7 +66,7 @@ if x_pos:
     height = img.shape[0]
     center_threshold = 50
 
-    draw_square("detect.jpg", x_pos, height)
+    draw_square(FILE_NAME, x_pos, height)
 
     if x_pos < (width // 2) - center_threshold:
         print(f"Target at {x_pos}: Rotate Left")
