@@ -53,6 +53,7 @@ def draw_square(img_file, middle_pos, length):
 
 TARGET_HEX = "#b43384"
 FILE_NAME = "detect.jpg"
+CENTER_THRESHOLD = 50
 
 cam = Camera()
 cam.flip_camera(vflip=True, hflip=True)
@@ -64,13 +65,12 @@ x_pos = find_hex_object(img, TARGET_HEX)
 if x_pos:
     width = img.shape[1]
     height = img.shape[0]
-    center_threshold = 50
 
     draw_square(FILE_NAME, x_pos, height)
 
-    if x_pos < (width // 2) - center_threshold:
+    if x_pos < (width // 2) - CENTER_THRESHOLD:
         print(f"Target at {x_pos}: Rotate Left")
-    elif x_pos > (width // 2) + center_threshold:
+    elif x_pos > (width // 2) + CENTER_THRESHOLD:
         print(f"Target at {x_pos}: Rotate Right")
     else:
         print("Target Centered!")
