@@ -38,33 +38,43 @@ integralDecay = 1.0
 def count_pulse(target_key):
     pulse_counts[target_key] += 1
 
+def PiController(target_Pulses, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay):
+    for index in pulse_counts:
+        # 1. Calculate the error (Difference between desired speed and actual speed)
+        # We use the absolute count because pulses are usually unsigned increments
+        actual_pulses = pulse_counts[index]
+        error = target_Pulses[index] - actual_pulses
+        
+        # 2. Accumulate Integral error
+        integral[index] += error
+        
+        # 3. Calculate adjustment (The PI formula)
+        adjustment = (Kp * error) + (Ki * integral[index])
+        
+        # 4. Update motor speed (Incrementally update current speed rather than jumping)
+        # This prevents jerky movements
+        new_speed = motorSpeeds[index] + adjustment
+        motorSpeeds[index] = max(-1.0, min(1.0, new_speed))
+        
+        # 5. Decay integral to prevent "windup"
+        integral[index] *= integralDecay
+        
+        # 6. Reset counts for the NEXT interval measurement
+        pulse_counts[index] = 0
+
 # handle Interrupts
 for index, device in encoder_devices.items():
     # lamba d=index is needed to capture the current value of index in the loop
     device.when_activated = lambda d=index: count_pulse(d) # trigger on rising edge
     device.when_deactivated = lambda d=index: count_pulse(d) # trigger on falling edge
 
-def PiController(target_Pulses, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay):
-    for index in pulse_counts:
-        if target_Pulses[index] > 0:
-            error = target_Pulses[index] - pulse_counts[index]
-        elif  target_Pulses[index] < 0:
-            error = target_Pulses[index] + pulse_counts[index]
-        else: 
-            error = 0
-        integral[index] += error
-        adjustment = Kp * error + Ki * integral[index]
-        print(f"Error: {error}, Integral: {integral[index]}, Adjustment: {adjustment}")
-        motorSpeeds[index] = max(-1.0, min(1.0, adjustment))
-        integral[index] *= integralDecay
-        pulse_counts[index] = 0
-
 while True: 
-
     PiController(targetPulses, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay)
+    
     for index in motors:
         motors[index].throttle = motorSpeeds[index]
-        #print(f"Target: {targetPulses[index]}, Count: {pulse_counts[index]}, Speed: {motorSpeeds[index]}").
+        print(f"{index} Speed: {motorSpeeds[index]:.2f} | Pulses: {pulse_counts[index]}")
+            
     sleep(0.1)
     
     

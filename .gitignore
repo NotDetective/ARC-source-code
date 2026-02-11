@@ -1,3 +1,5 @@
 .lgd-nfy0
-./__pychache__/*
+__pycache__/
+*.py[cod]
 detect.jpg
+images/
