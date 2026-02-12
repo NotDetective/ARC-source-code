@@ -27,11 +27,11 @@ encoder_pins = {
 }
 
 pulse_counts = {"BL": 0, "BR": 0, "FL": 0, "FR": 0}
-motorSpeeds = {"BL": 0.45,"BR": 0.4,"FL": 0.45,"FR": 0.3}
+motorSpeeds = {"BL": 0.46,"BR": 0.33,"FL": 0.47,"FR": 0.35}
 targetRPM = {"BL": 65,"BR": 65,"FL": 65,"FR": 65}
 integral = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
 
-Kp = 0.001
+Kp = 0.0005
 Ki = 0.0
 
 integralDecay = 1.0
@@ -65,23 +65,21 @@ def PiController(targetPWM, pulse_counts, integral, motorSpeeds, Kp, Ki, integra
 for index in motors:
     motors[index].throttle = motorSpeeds[index]
 
-time.sleep(dt * 10)
+time.sleep(dt * 5)
 for index in motors:
     pulse_counts[index] = 0
 
-while True: 
-    # for index in encoder_pins:
-    #     motors[index].throttle = 0.5
-    #     print(f"RPM {index}: {pulse_counts[index]/18}")
-    #     pulse_counts[index] = 0
-
+for i in range(200):
+    print(currentRPM)
     PiController(targetRPM, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay)
     
     for index in motors:
         motors[index].throttle = motorSpeeds[index]
-    print(currentRPM)
 
     time.sleep(dt)
+for index in motors:
+    motors[index].throttle = 0.0
+
 
     
     
