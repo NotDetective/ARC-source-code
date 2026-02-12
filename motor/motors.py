@@ -27,17 +27,14 @@ encoder_pins = {
 }
 
 pulse_counts = {"BL": 0, "BR": 0, "FL": 0, "FR": 0}
-motorSpeeds = {"BL": 0.46,"BR": 0.33,"FL": 0.47,"FR": 0.35}
-targetRPM = {"BL": 65,"BR": 65,"FL": 65,"FR": 65}
+motorSpeeds = {"BL": -0.37,"BR": 0.33,"FL": 0.47,"FR": 0.35}
+targetRPM = {"BL": -65,"BR": 65,"FL": 65,"FR": 65}
 integral = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
+currentRPM = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
 
 Kp = 0.0005
-Ki = 0.0
-
-integralDecay = 1.0
-
 dt = 0.05
-currentRPM = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
+
 # ISR
 def count_pulse_callback(chip, gpio, level, tick): # chip = gpiochip, gpio = pin number, level = 0 or 1, tick = timestamp of event
     for key, pin in encoder_pins.items(): # check which encoder triggered the interrupt
@@ -51,14 +48,17 @@ for side, pin in encoder_pins.items():
     lgpio.callback(chip, pin, lgpio.BOTH_EDGES, func=count_pulse_callback) # register the callback function for both rising and falling edges
 
 
-def PiController(targetPWM, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay):
+def PiController(targetPWM, pulse_counts, integral, motorSpeeds, Kp):
     for index in pulse_counts:
         currentRPM[index] = ((pulse_counts[index] / 1080) * (60 / dt))
-        error = targetPWM[index] - currentRPM[index]
-        integral[index] = max(-50, min(50, integral[index] + error))
-        adjustment = Kp * error + Ki * integral[index]
+        if targetPWM[index] > 0:
+            error = targetPWM[index] - currentRPM[index]
+        elif targetPWM[index] < 0:
+            error = targetPWM[index] + currentRPM[index]
+        else:            
+            error = 0
+        adjustment = Kp * error
         motorSpeeds[index] = max(-1.0, min(1.0, motorSpeeds[index] + adjustment))
-        integral[index] *= integralDecay
         pulse_counts[index] = 0
 
 # startup time
@@ -71,7 +71,7 @@ for index in motors:
 
 for i in range(200):
     print(currentRPM)
-    PiController(targetRPM, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay)
+    PiController(targetRPM, pulse_counts, integral, motorSpeeds, Kp)
     
     for index in motors:
         motors[index].throttle = motorSpeeds[index]
