@@ -1,12 +1,14 @@
+from operator import index
 import board
-from time import sleep
+import lgpio
+import time
 from adafruit_pca9685 import PCA9685
 from adafruit_motor import motor
-from gpiozero import DigitalInputDevice 
 
 i2c = board.I2C()
 pca = PCA9685(i2c, address=0x60) 
 pca.frequency = 1000
+chip = lgpio.gpiochip_open(0)
 
 # enable motor pins
 motors = { 
@@ -16,65 +18,70 @@ motors = {
     "FR": motor.DCMotor(pca.channels[14], pca.channels[15]) 
 }
 
-# enable the interrupts on the GPIO pins
-encoder_devices = {
-    "BL": DigitalInputDevice(17, pull_up=True),
-    "BR": DigitalInputDevice(27, pull_up=True),
-    "FL": DigitalInputDevice(22, pull_up=True),
-    "FR": DigitalInputDevice(23, pull_up=True)
+# encoder pins
+encoder_pins = {
+    "BL": 17,
+    "BR": 27,
+    "FL": 22,
+    "FR": 23
 }
 
 pulse_counts = {"BL": 0, "BR": 0, "FL": 0, "FR": 0}
-motorSpeeds = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
-targetPulses = {"BL": 250,"BR": 250,"FL": 250,"FR": 250}
+motorSpeeds = {"BL": 0.45,"BR": 0.4,"FL": 0.45,"FR": 0.3}
+targetRPM = {"BL": 65,"BR": 65,"FL": 65,"FR": 65}
 integral = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
 
-Kp = 0.01
+Kp = 0.001
 Ki = 0.0
 
 integralDecay = 1.0
 
-#interrupt trigger
-def count_pulse(target_key):
-    pulse_counts[target_key] += 1
+dt = 0.05
+currentRPM = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
+# ISR
+def count_pulse_callback(chip, gpio, level, tick): # chip = gpiochip, gpio = pin number, level = 0 or 1, tick = timestamp of event
+    for key, pin in encoder_pins.items(): # check which encoder triggered the interrupt
+        # print(f"ticks {tick}")
+        if gpio == pin: # if the interrupt is from this encoder pin
+            pulse_counts[key] += 1 # increment the pulse count for that motor
 
-def PiController(target_Pulses, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay):
+# initialize encoder pins and set up interrupts
+for side, pin in encoder_pins.items(): 
+    lgpio.gpio_claim_alert(chip, pin, lgpio.BOTH_EDGES, lgpio.SET_PULL_UP) # claim the GPIO pin for input lgpio.gpio_set_mode(chip, pin, lgpio.GPIO_MODE_INPUT) # set the pin as input lgpio.gpio_set_pull(chip, pin, lgpio.GPIO_PULL_UP) # enable pull-up resistor lgpio.gpio_set_alert_func(chip, pin, count_pulse_callback) # set the interrupt handler for this pin
+    lgpio.callback(chip, pin, lgpio.BOTH_EDGES, func=count_pulse_callback) # register the callback function for both rising and falling edges
+
+
+def PiController(targetPWM, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay):
     for index in pulse_counts:
-        # 1. Calculate the error (Difference between desired speed and actual speed)
-        # We use the absolute count because pulses are usually unsigned increments
-        actual_pulses = pulse_counts[index]
-        error = target_Pulses[index] - actual_pulses
-        
-        # 2. Accumulate Integral error
-        integral[index] += error
-        
-        # 3. Calculate adjustment (The PI formula)
-        adjustment = (Kp * error) + (Ki * integral[index])
-        
-        # 4. Update motor speed (Incrementally update current speed rather than jumping)
-        # This prevents jerky movements
-        new_speed = motorSpeeds[index] + adjustment
-        motorSpeeds[index] = max(-1.0, min(1.0, new_speed))
-        
-        # 5. Decay integral to prevent "windup"
+        currentRPM[index] = ((pulse_counts[index] / 1080) * (60 / dt))
+        error = targetPWM[index] - currentRPM[index]
+        integral[index] = max(-50, min(50, integral[index] + error))
+        adjustment = Kp * error + Ki * integral[index]
+        motorSpeeds[index] = max(-1.0, min(1.0, motorSpeeds[index] + adjustment))
         integral[index] *= integralDecay
-        
-        # 6. Reset counts for the NEXT interval measurement
         pulse_counts[index] = 0
 
-# handle Interrupts
-for index, device in encoder_devices.items():
-    # lamba d=index is needed to capture the current value of index in the loop
-    device.when_activated = lambda d=index: count_pulse(d) # trigger on rising edge
-    device.when_deactivated = lambda d=index: count_pulse(d) # trigger on falling edge
+# startup time
+for index in motors:
+    motors[index].throttle = motorSpeeds[index]
+
+time.sleep(dt * 10)
+for index in motors:
+    pulse_counts[index] = 0
 
 while True: 
-    PiController(targetPulses, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay)
+    # for index in encoder_pins:
+    #     motors[index].throttle = 0.5
+    #     print(f"RPM {index}: {pulse_counts[index]/18}")
+    #     pulse_counts[index] = 0
+
+    PiController(targetRPM, pulse_counts, integral, motorSpeeds, Kp, Ki, integralDecay)
     
     for index in motors:
         motors[index].throttle = motorSpeeds[index]
-        print(f"{index} Speed: {motorSpeeds[index]:.2f} | Pulses: {pulse_counts[index]}")
-            
-    sleep(0.1)
+    print(currentRPM)
+
+    time.sleep(dt)
+
     
     
