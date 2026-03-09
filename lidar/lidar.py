@@ -5,6 +5,7 @@ import time # Time module
 # port = input("Enter port name which lidar is connected:") #windows
 port = "/dev/ttyUSB0" #linux
 Obj = PyLidar3.YdLidarX4(port) #PyLidar3.your_version_of_lidar(port,chunk_size)
+time.sleep(2) # wait for 2 seconds to establish connection
 if(Obj.Connect()):
     print(Obj.GetDeviceInfo())
     gen = Obj.StartScanning()
