@@ -3,35 +3,35 @@ from encoder.encoder import Encoder
 
 class MotorController:
 
-    def __init__(self, aPca):
+    def __init__(self, aPca, aChip):
         self.__motors = {
             "BL": Motor(
                 aPca.channels[8],
                 aPca.channels[9],
                 0.0,  # initial forward speed
                 0.0,  # initial backward speed
-                Encoder(17)
+                Encoder(17, aChip)
             ),
             "BR": Motor(
                 aPca.channels[10],
                 aPca.channels[11],
                 0.0,  # initial forward speed
                 0.0,  # initial backward speed
-                Encoder(27)
+                Encoder(27, aChip)
             ),
             "FL": Motor(
                 aPca.channels[12],
                 aPca.channels[13],
                 0.0,  # initial forward speed
                 0.0,  # initial backward speed
-                Encoder(22)
+                Encoder(22, aChip)
             ),
             "FR": Motor(
                 aPca.channels[14],
                 aPca.channels[15],
                 0.0,  # initial forward speed
                 0.0,  # initial backward speed
-                Encoder(23)
+                Encoder(23, aChip)
             )
         }
     
