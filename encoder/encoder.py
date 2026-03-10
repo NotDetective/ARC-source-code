@@ -4,7 +4,6 @@ class Encoder:
 
     __KP = 0.0005
     __DT = 0.05
-    
 
     def __init__(self, aPin : int, aChip ) -> None:
         self.__pin = aPin
@@ -17,23 +16,27 @@ class Encoder:
     # chip = gpiochip, gpio = pin number, level = 0 or 1, tick = timestamp of event
     def __count_pulse_callback(self, chip, gpio, level, tick) -> None:   # type: ignore
         self.__pulse_count += 1  # increment the pulse count for that motor
-    
-    def __calculate_error(self, targetPWM: int, currentRPM: int) -> int:
-        if targetPWM > 0:
-            return targetPWM - currentRPM
-        elif targetPWM < 0:
-            return targetPWM + currentRPM
-        return 0
         
-    def pi_controller(self, targetPWM: int, motorSpeed: float) -> float:
-        currentRPM = (self.pulse_count / 1080) * (60 / self.__DT)
-       
-        error = self.__calculate_error(targetPWM, int(currentRPM))
-       
+    def pi_controller(self, target_rpm: int, current_throttle: float) -> float:
+        # 1. Calculate current RPM from pulses since last tick
+        # pulses / pulses_per_rev * (seconds_in_minute / time_passed)
+        current_rpm = (self.__pulse_count / 1080) * (60 / self.__DT)
+        
+        # 2. Calculate error
+        error = target_rpm - current_rpm
+        
+        # 3. Simple Proportional adjustment
+        # If target is 65 and current is 50, error is 15. Adjustment = 15 * 0.0005
         adjustment = self.__KP * error
-        motorSpeed = max(-1.0, min(1.0, motorSpeed + adjustment))
-        self.pulse_count = 0
-        return motorSpeed
+        
+        # 4. Apply adjustment to the existing throttle
+        new_throttle = max(-1.0, min(1.0, current_throttle + adjustment))
+        
+        # 5. RESET pulse count for the next tick!
+        self.__pulse_count = 0
+        
+        return new_throttle
+    
         
      
         
