@@ -27,7 +27,12 @@ encoder_pins = {
 }
 
 pulse_counts = {"BL": 0, "BR": 0, "FL": 0, "FR": 0}
+# forwards
 motorSpeeds = {"BL": 0.46,"BR": 0.33,"FL": 0.47,"FR": 0.35}
+# backwards
+# motorSpeeds = {"BL": -0.37,"BR": -0.42,"FL": -0.35,"FR": -0.39}
+# turn cw
+# motorSpeeds = {"BL": 0.46,"BR": -0.42,"FL": 0.47,"FR": -0.39}
 targetRPM = {"BL": 65,"BR": 65,"FL": 65,"FR": 65}
 integral = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
 currentRPM = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
