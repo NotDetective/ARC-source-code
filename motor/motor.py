@@ -55,5 +55,5 @@ class Motor:
         self.__motor.throttle = self.__current_throttle
 
     def stop(self):
-        self.__current_throttle = 0.0
-        self.__motor.throttle = 0.0
+        self.__current_throttle = MotorMovement.LOCKED.movement_value
+        self.__motor.throttle = MotorMovement.LOCKED.movement_value
