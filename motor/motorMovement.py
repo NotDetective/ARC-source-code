@@ -8,7 +8,6 @@ class MotorMovement(Enum):
     
     @property
     def movement_value(self) -> int | None:
-        # We map the enum member (self) to the desired output
         mapping: dict[MotorMovement, int | None] = {
             MotorMovement.FORWARDS: 1,
             MotorMovement.BACKWARDS: -1,

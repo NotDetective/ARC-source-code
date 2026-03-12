@@ -1,6 +1,6 @@
 from motor.motor import Motor
 from motor.motorMovement import MotorMovement
-from moveCommand import MoveCommand
+from moveCommands.moveCommand import MoveCommand
 
 class StopCommand(MoveCommand):
     

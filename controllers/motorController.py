@@ -2,7 +2,7 @@ import time
 
 from motor.motor import Motor
 from encoder.encoder import Encoder
-from move.moveCommand import MoveCommand
+from moveCommands.moveCommand import MoveCommand
 
 class MotorController:
 
@@ -53,19 +53,17 @@ class MotorController:
         self.__dt = 0.05
     
     def give_move_command(self, aCommand: MoveCommand, duration_steps=200):
-        self.__running = True
-        
-        for i in range(duration_steps):
-            # 1. Ask the command to update each motor's target
-            aCommand.motor_command(
-                self.__motors["FL"], self.__motors["FR"], 
-                self.__motors["BL"], self.__motors["BR"]
-            )
+        aCommand.motor_command(
+            self.__motors["FL"], self.__motors["FR"], 
+            self.__motors["BL"], self.__motors["BR"]
+        )
+
+        for i in range(1, duration_steps + 1):
+            for motor in self.__motors.values():
+                motor.run_motor(i) 
             
-            # 2. Small delay for the encoders to count pulses
             time.sleep(self.__dt)
             
-        # 3. Emergency stop after the loop finishes
         self.stop_all()
         
     def stop_all(self):

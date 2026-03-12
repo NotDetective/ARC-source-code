@@ -17,24 +17,30 @@ class Encoder:
     def __count_pulse_callback(self, chip, gpio, level, tick) -> None:   # type: ignore
         self.__pulse_count += 1  # increment the pulse count for that motor
         
-    def pi_controller(self, target_rpm: int, current_throttle: float) -> float:
-        # 1. Calculate current RPM from pulses since last tick
-        # pulses / pulses_per_rev * (seconds_in_minute / time_passed)
-        current_rpm = (self.__pulse_count / 1080) * (60 / self.__DT)
-        
-        # 2. Calculate error
-        error = target_rpm - current_rpm
-        
-        # 3. Simple Proportional adjustment
-        # If target is 65 and current is 50, error is 15. Adjustment = 15 * 0.0005
-        adjustment = self.__KP * error
-        
-        # 4. Apply adjustment to the existing throttle
-        new_throttle = max(-1.0, min(1.0, current_throttle + adjustment))
-        
-        # 5. RESET pulse count for the next tick!
+    def reset_count(self):
         self.__pulse_count = 0
         
+    def pi_controller(self, target_rpm: int, current_throttle: float) -> float:
+        current_rpm = (self.__pulse_count / 1080) * (60 / self.__DT)
+        
+        if target_rpm > 0:
+            error = target_rpm - current_rpm
+        elif target_rpm < 0:
+            error = target_rpm + current_rpm
+        else:
+            error = 0
+        
+        adjustment = self.__KP * error
+        
+        new_throttle = max(-1.0, min(1.0, current_throttle + adjustment))
+
+        print(f"__pulse_count: {self.__pulse_count}")
+        print(f"error: {error}")
+        self.reset_count()
+        
+        print(f"current_rpm: {current_rpm}")
+        print(f"target_rpm: {target_rpm}")
+        print(f"new_throttle: {new_throttle}")
         return new_throttle
     
         
