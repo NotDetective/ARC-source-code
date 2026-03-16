@@ -39,43 +39,45 @@ colorController = ColorController()
 
 print("Robot active. Searching for targets...")
 
-while True:
-    image = cam.take_foto("angle-detect")
-    results = modelController.get_detected_cups(trained_model, image)
-    box_data = modelController.get_biggest_box_boundaries(results)
-    all_color_blobs = colorController.find_hex_object(image, TARGET_HEX)
+try:
+    while True:
+        image = cam.take_foto("angle-detect")
+        results = modelController.get_detected_cups(trained_model, image)
+        box_data = modelController.get_biggest_box_boundaries(results)
+        all_color_blobs = colorController.find_hex_object(image, TARGET_HEX)
 
-    target_x = None
+        target_x = None
 
-    # Filter blobs inside the detected cup box
-    if box_data and all_color_blobs:
-        x1, y1, x2, y2 = box_data
-        filtered_blobs = [ (bx, by) for (bx, by) in all_color_blobs if x1 <= bx <= x2 and y1 <= by <= y2 ]
-        
-        if filtered_blobs:
-            # Get the average X position of the detected blobs
-            target_x = sum(b[0] for b in filtered_blobs) / len(filtered_blobs)
+        # Filter blobs inside the detected cup box
+        if box_data and all_color_blobs:
+            x1, y1, x2, y2 = box_data
+            filtered_blobs = [ (bx, by) for (bx, by) in all_color_blobs if x1 <= bx <= x2 and y1 <= by <= y2 ]
+            
+            if filtered_blobs:
+                # Get the average X position of the detected blobs
+                target_x = sum(b[0] for b in filtered_blobs) / len(filtered_blobs)
 
-    # --- CENTERING LOGIC ---
-    if target_x is not None:
-        screen_center = IMAGE_WIDTH / 2
-        error = target_x - screen_center
+        # --- CENTERING LOGIC ---
+        if target_x is not None:
+            screen_center = IMAGE_WIDTH / 2
+            error = target_x - screen_center
 
-        print(error * -1)
-
-        if abs(error) <= CENTER_THRESHOLD:
-            print("Target Centered! Moving Forward...")
-            # motorController.give_move_command(ForwardsCommand(), 100)
-        elif error > 0:
-            print(f"Target is Right (error: {error}). Turning Right...")
-            motorController.give_move_command(RightCommand(), int(error/50))
-            # motorController.turn_right(speed=150) # Replace with your actual turn command
+            if abs(error) <= CENTER_THRESHOLD:
+                print("Target Centered! Moving Forward...")
+                # motorController.give_move_command(ForwardsCommand(), 100)
+            elif error > 0:
+                print(f"Target is Right (error: {error}). Turning Right...")
+                motorController.give_move_command(RightCommand(), int(error/50))
+                # motorController.turn_right(speed=150) # Replace with your actual turn command
+            else:
+                print(f"Target is Left (error: {error}). Turning Left...")
+                motorController.give_move_command(LeftCommand(), int((error * -1) /50)  )
+                # motorController.turn_left(speed=150)  # Replace with your actual turn command
         else:
-            print(f"Target is Left (error: {error}). Turning Left...")
-            motorController.give_move_command(LeftCommand(), int((error * -1) /50)  )
-            # motorController.turn_left(speed=150)  # Replace with your actual turn command
-    else:
-        print("Searching for cup...")
-        # Optional: motorController.stop() 
+            print("Searching for cup...")
+            # Optional: motorController.stop() 
 
-    time.sleep(0.1) # Reduced sleep for better responsiveness
+        time.sleep(0.1) # Reduced sleep for better responsiveness
+except:
+    motorController.stop_all()
+    
