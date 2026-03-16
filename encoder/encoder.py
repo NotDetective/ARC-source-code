@@ -34,13 +34,13 @@ class Encoder:
         
         new_throttle = max(-1.0, min(1.0, current_throttle + adjustment))
 
-        print(f"__pulse_count: {self.__pulse_count}")
-        print(f"error: {error}")
+        # print(f"__pulse_count: {self.__pulse_count}")
+        # print(f"error: {error}")
         self.reset_count()
         
-        print(f"current_rpm: {current_rpm}")
-        print(f"target_rpm: {target_rpm}")
-        print(f"new_throttle: {new_throttle}")
+        # print(f"current_rpm: {current_rpm}")
+        # print(f"target_rpm: {target_rpm}")
+        # print(f"new_throttle: {new_throttle}")
         return new_throttle
     
         

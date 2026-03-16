@@ -10,7 +10,6 @@ class ModelController:
         return results 
 
     def __draw_detected_cups(self, results, picture):
-        
         img = results[0].orig_img.copy()
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = 2          
@@ -110,3 +109,12 @@ class ModelController:
 
         cap.release()
         cv2.destroyAllWindows()
+        
+    def get_biggest_box_boundaries(self, results):
+        if self.has_detected_cups(results):
+            return None
+        
+        boxes = results[0].boxes
+        biggest_box = max(boxes, key=lambda b: b.xywh[0][2] * b.xywh[0][3])
+        
+        return map(int, biggest_box.xyxy[0].tolist())
