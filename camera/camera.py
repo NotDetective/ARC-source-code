@@ -5,9 +5,13 @@ class MyCamera:
     def __init__(self):
         self.__cam = None
         self.folder = "images"
+        self.__FOV = 120
         
         if not os.path.exists(self.folder):
             os.makedirs(self.folder)
+            
+    def get_FOV(self):
+        return self.__FOV
 
     def start_camera(self):
         cam = PiCam()
@@ -26,3 +30,4 @@ class MyCamera:
         
         self.__cam.take_photo(path)
         print(f"Photo saved to: {path}")
+        return path
