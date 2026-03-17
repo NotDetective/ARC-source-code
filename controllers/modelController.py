@@ -83,8 +83,6 @@ class ModelController:
         print(f"Target: {label}")
         print(f"Center Offset: {pixel_offset:.1f} pixels")
         print(f"Degrees from Middle: {degree_offset:.2f}°")
-
-
         
     def open_camera_feed(self, model):
         cap = cv2.VideoCapture(0)
