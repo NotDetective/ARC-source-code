@@ -41,7 +41,14 @@ def collect_cup():
 
 # find target to go to
 def find():
-    pass
+     while True:        
+        image = cam.take_foto("find-cup")
+        results = model_controller.get_detected_cups(trained_model, image)    
+        if not model_controller.has_detected_cups(results):
+            print("end")
+            break
+        else:
+            motor_controller.give_move_command(ClockwiseCommand(), get_rotation_steps(45))
 
 # drive to target 
 def drive():
