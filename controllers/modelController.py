@@ -84,12 +84,7 @@ class ModelController:
         print(f"Center Offset: {pixel_offset:.1f} pixels")
         print(f"Degrees from Middle: {degree_offset:.2f}°")
 
-        
-        
-    def get_closest_cup(self, results):
-        
-        for result in results:
-            print(result)
+
         
     def open_camera_feed(self, model):
         cap = cv2.VideoCapture(0)
