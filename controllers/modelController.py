@@ -55,53 +55,6 @@ class ModelController:
     def has_detected_cups(self, results):
         boxes = results[0].boxes
         return len(boxes) == 0
-            
-    def get_angle_of_cups(self, model, picture):
-        
-        HFOV = MyCamera().get_FOV()  
-                
-        results = self.get_detected_cups(model, picture)
-        
-        if self.has_detected_cups(results):
-            print("No objects detected at all.")
-            return
-        
-        img_width = results[0].orig_shape[1]
-        img_center_x = img_width / 2
-
-        boxes = results[0].boxes
-            
-        closest_box = min(boxes, key=lambda x: abs(x.xywh[0][0] - img_center_x))
-
-        class_id = int(closest_box.cls[0])
-        label = model.names[class_id]
-
-        cup_center_x = closest_box.xywh[0][0].item()
-        pixel_offset = cup_center_x - img_center_x
-        degree_offset = pixel_offset * (HFOV / img_width)
-
-        print(f"Target: {label}")
-        print(f"Center Offset: {pixel_offset:.1f} pixels")
-        print(f"Degrees from Middle: {degree_offset:.2f}°")
-        
-    def open_camera_feed(self, model):
-        cap = cv2.VideoCapture(0)
-        while cap.isOpened():
-            success, frame = cap.read()
-            if not success:
-                break
-
-            results = model(frame)
-
-            annotated_frame = results[0].plot()
-
-            cv2.imshow("YOLO Live Detection", annotated_frame)
-
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
-
-        cap.release()
-        cv2.destroyAllWindows()
         
     def get_biggest_box_boundaries(self, results):
         if self.has_detected_cups(results):

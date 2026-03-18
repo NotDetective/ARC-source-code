@@ -13,6 +13,7 @@ try:
         sleep(1)
         servo.max()
         sleep(1)
+        
 except KeyboardInterrupt:
     print("\nShutting down.")
     servo.detach() # Release the motor so it doesn't hum

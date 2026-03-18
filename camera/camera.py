@@ -18,7 +18,7 @@ class MyCamera:
         cam.flip_camera(vflip=True, hflip=True)
         self.__cam = cam
 
-    def take_foto(self, name):
+    def take_photo(self, name):
         if self.__cam is None:
             print("Error: Camera not started!")
             return

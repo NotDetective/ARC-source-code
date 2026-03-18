@@ -49,6 +49,42 @@ def find():
             break
         else:
             motor_controller.give_move_command(ClockwiseCommand(), get_rotation_steps(45))
+            
+            
+def scan():
+    while True:
+        print(current_state)
+        image_path = cam.take_photo("scan") 
+        
+        results = model_controller.get_detected_cups(trained_model, image_path)
+        
+        cup_found = not model_controller.has_detected_cups(results)
+
+        if current_state == "SCAN":
+            if cup_found:
+                motor_controller.stop_movement()
+                print("Cup detected! Transitioning to GO.")
+                current_state = "GO"
+                scan_start_time = None
+                
+                raise Exception("done")
+                
+            else:
+                if scan_start_time is None:
+                    print("No cup in sight. Starting slow rotation scan...")
+                    scan_start_time = time.time()
+                    
+                    print(motor_controller.has_active_command())
+                    
+                    if not motor_controller.has_active_command():
+                        motor_controller.set_move_command(ClockwiseCommand()) 
+                
+                if time.time() - scan_start_time > SCAN_TIMEOUT:
+                    print("360 degree scan failed to find cup. Switching to SEARCH.")
+                    motor_controller.stop_movement()
+                    scan_start_time = None
+                    current_state = "SEARCH"
+        time.sleep(0.05)
 
 # drive to target 
 def drive():

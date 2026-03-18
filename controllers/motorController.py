@@ -39,6 +39,9 @@ class MotorController:
             )
         }
         self.__dt = 0.05
+        
+    def has_active_command(self):
+        return self._stop_event.is_set()
     
     def set_move_command(self, aCommand: MoveCommand):
         self._stop_event.set() 
