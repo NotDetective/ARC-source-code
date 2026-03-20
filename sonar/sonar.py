@@ -1,11 +1,4 @@
 from gpiozero import DistanceSensor
-# ultrasonic = [
-#     DistanceSensor(echo=24, trigger=25), # right
-#     DistanceSensor(echo=14, trigger=15)  # left
-#     ]
-# while True:
-#     for i in range(len(ultrasonic)):
-#         print(ultrasonic[i].distance*100)
 
 class Sonar:
     def __init__(self, echo=0, trigger=0):
