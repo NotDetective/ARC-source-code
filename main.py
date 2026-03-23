@@ -1,18 +1,13 @@
 import board
 import lgpio
-import time
 import traceback
 from sys import exit
 from adafruit_pca9685 import PCA9685
+from robotProcess import RobotProcess
 from controllers.motorController import MotorController
 from controllers.modelController import ModelController
 from controllers.colorController import ColorController
 from controllers.sonarController import SonarController
-from moveCommands.forwardsCommand import ForwardsCommand
-from moveCommands.leftCommand import LeftCommand
-from moveCommands.rightCommand import RightCommand
-from moveCommands.clockwiseCommand import ClockwiseCommand
-from moveCommands.counterClockwiseCommand import CounterClockwiseCommand
 from model.model import Model
 from camera.camera import MyCamera as Camera
 
@@ -20,7 +15,7 @@ from camera.camera import MyCamera as Camera
 NAME = "plastic_cups_v8_gpu"
 PROJECT = "cup_project_v2"
 TARGET_HEX = "#b43384"
-SCAN_TIMEOUT = 20.0 
+SCAN_TIMEOUT = 40.0 
 
 
 # --- HARDWARE SETUP ---
@@ -52,26 +47,25 @@ else:
 motor_controller = MotorController(pca, chip)
 model_controller = ModelController()
 color_controller = ColorController()
-# sonar_controller = SonarController()
-# cam = Camera()
+sonar_controller = SonarController()
+cam = Camera()  
 
 # --- STARTS ---
-# cam.start_camera()
+cam.start_camera()
 
-current_state = "SCAN"
-scan_start_time = None
+try:   
+    robot_logic = RobotProcess(
+        motor=motor_controller,
+        model_ctrl=model_controller,
+        color_ctrl=color_controller,
+        sonar_ctrl=sonar_controller,
+        camera=cam,
+        target_hex=TARGET_HEX,
+        timeout=SCAN_TIMEOUT
+    )
 
-try:    
-    motor_controller.set_move_command(ForwardsCommand())
-
-    # sonar_controller.set_sonars_trigger_distance(["L", "R"], 15)
-    # sonar_controller.set_sonars_active(["L", "R"])
-    
-    # sonar_controller.start_sonars(motor_controller)
-    
-    i = 0
-    while True: 
-        i += 1
+    while True:
+        robot_logic.run_state_logic()
         
 except KeyboardInterrupt:
     motor_controller.stop_movement()

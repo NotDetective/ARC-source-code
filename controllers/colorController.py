@@ -5,13 +5,25 @@ import os
 
 class ColorController:
     
-    def hex_to_hsv_range(self, hex_code, tolerance=20):
+    def hex_to_hsv_range(self, hex_code, h_tol=10, s_tol=50, v_tol=50):
         rgb = webcolors.hex_to_rgb(hex_code)
-        bgr = np.uint8([[[rgb.blue, rgb.green, rgb.red]]])
-        hsv_color = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)[0][0]
         
-        lower = np.array([max(0, hsv_color[0] - 10), 50, 50])
-        upper = np.array([min(179, hsv_color[0] + 10), 255, 255])
+        pixel = np.uint8([[[rgb.blue, rgb.green, rgb.red]]])
+        hsv = cv2.cvtColor(pixel, cv2.COLOR_BGR2HSV)[0][0]
+        
+        h, s, v = hsv[0], hsv[1], hsv[2]
+
+        lower = np.array([
+            max(0, h - h_tol), 
+            max(40, s - s_tol),
+            max(40, v - v_tol)  
+        ])
+        
+        upper = np.array([
+            min(179, h + h_tol), 
+            min(255, s + s_tol), 
+            min(255, v + v_tol)
+        ])
         
         return lower, upper
     

@@ -11,8 +11,8 @@ class SonarController:
             # "ML",
             # "MM",
             # "MR"
-            "L": Sonar(echo=14, trigger=15),
-            "R": Sonar(echo=24, trigger=25)
+            # "L": Sonar(echo=14, trigger=15),
+            # "R": Sonar(echo=24, trigger=25)
         }
         
         self.__running = False
