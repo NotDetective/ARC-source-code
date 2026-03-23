@@ -5,7 +5,7 @@ import os
 
 class ColorController:
     
-    def hex_to_hsv_range(self, hex_code, h_tol=10, s_tol=50, v_tol=50):
+    def hex_to_hsv_range(self, hex_code, h_tol=10, s_tol=70, v_tol=70):
         rgb = webcolors.hex_to_rgb(hex_code)
         
         pixel = np.uint8([[[rgb.blue, rgb.green, rgb.red]]])
@@ -57,7 +57,7 @@ class ColorController:
                         cX = int(M["m10"] / M["m00"])
                         cY = int(M["m01"] / M["m00"])
                         
-                        detected_blobs.append((cX, cY))
+                        detected_blobs.append((cX, cY, cv2.contourArea(cnt)))
                         
                         cv2.circle(image, (cX, cY), 7, (0, 0, 255), -1)
 
