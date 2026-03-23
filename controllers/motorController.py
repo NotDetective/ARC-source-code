@@ -9,33 +9,37 @@ class MotorController:
         self._stop_event = threading.Event()
         self._move_thread = None
         self.__motors = {
-            "BL": Motor(
+            # Motor shield M1 
+            "FL": Motor(
                 aPca.channels[8],
                 aPca.channels[9],
-                0.46,  # initial forward speed
-                -0.37,  # initial backward speed
-                Encoder(17, aChip)
-            ),
-            "BR": Motor(
-                aPca.channels[10],
-                aPca.channels[11],
-                0.33,  # initial forward speed
-                -0.42,  # initial backward speed
-                Encoder(27, aChip)
-            ),
-            "FL": Motor(
-                aPca.channels[12],
-                aPca.channels[13],
                 0.47,  # initial forward speed
                 -0.35,  # initial backward speed
-                Encoder(22, aChip)
+                Encoder(1, aChip)
             ),
+            # Motor shield M2
+            "BL": Motor(
+                aPca.channels[11],
+                aPca.channels[10],
+                0.46,  # initial forward speed
+                -0.37,  # initial backward speed
+                Encoder(7, aChip)
+            ),
+            # Motor shield M3 
             "FR": Motor(
+                aPca.channels[13],
+                aPca.channels[12],
+                0.37,  # initial forward speed
+                -0.39,  # initial backward speed
+                Encoder(8, aChip)
+            ),
+            # Motor shield M4
+            "BR": Motor(
                 aPca.channels[14],
                 aPca.channels[15],
-                0.35,  # initial forward speed
-                -0.39,  # initial backward speed
-                Encoder(23, aChip)
+                0.33,  # initial forward speed
+                -0.42,  # initial backward speed
+                Encoder(25, aChip)
             )
         }
         self.__dt = 0.05

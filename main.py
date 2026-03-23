@@ -2,6 +2,7 @@ import board
 import lgpio
 import time
 import traceback
+from sys import exit
 from adafruit_pca9685 import PCA9685
 from controllers.motorController import MotorController
 from controllers.modelController import ModelController
@@ -19,16 +20,27 @@ from camera.camera import MyCamera as Camera
 NAME = "plastic_cups_v8_gpu"
 PROJECT = "cup_project_v2"
 TARGET_HEX = "#b43384"
+SCAN_TIMEOUT = 20.0 
+
 
 # --- HARDWARE SETUP ---
-i2c = board.I2C()
-pca = PCA9685(i2c, address=0x60) 
+
+try:
+    i2c = board.I2C()
+    pca = PCA9685(i2c, address=0x60)
+except Exception as e:
+    print("\n[!] FATAL ERROR: Could not connect to I2C port.")
+    print(f"Details: {e}")
+    print("-" * 40)
+    print("TROUBLESHOOTING STEPS:")
+    print("1. Does the robot have main power?")
+    print("2. Is the motor shield powered independently?")
+    print("3. Are the status LEDs on the motors illuminated?")
+    print("-" * 40)
+    exit(1)
+
 pca.frequency = 1000
 chip = lgpio.gpiochip_open(0)
-
-motor_controller = MotorController(pca, chip)
-cam = Camera()
-cam.start_camera()
 
 # --- MODEL SETUP ---
 model = Model(PROJECT, NAME)
@@ -37,21 +49,25 @@ if model.check_for_trained_model():
 else:
     raise Exception("Please provide a valid YOLO model")
 
+motor_controller = MotorController(pca, chip)
 model_controller = ModelController()
 color_controller = ColorController()
-sonar_controller = SonarController()
+# sonar_controller = SonarController()
+# cam = Camera()
 
-SCAN_TIMEOUT = 20.0 
+# --- STARTS ---
+# cam.start_camera()
+
 current_state = "SCAN"
 scan_start_time = None
 
 try:    
     motor_controller.set_move_command(ForwardsCommand())
+
+    # sonar_controller.set_sonars_trigger_distance(["L", "R"], 15)
+    # sonar_controller.set_sonars_active(["L", "R"])
     
-    sonar_controller.set_sonars_active(["L", "R"])
-    sonar_controller.set_sonars_trigger_distance(["L", "R"], 15)
-    
-    sonar_controller.start_sonars(motor_controller)
+    # sonar_controller.start_sonars(motor_controller)
     
     i = 0
     while True: 
@@ -64,4 +80,3 @@ except Exception as e:
     print("--- FULL ERROR TRACEBACK ---")
     traceback.print_exc() 
     print("----------------------------")
-    

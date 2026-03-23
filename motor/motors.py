@@ -12,28 +12,33 @@ chip = lgpio.gpiochip_open(0)
 
 # enable motor pins
 motors = { 
-    "BL": motor.DCMotor(pca.channels[8], pca.channels[9]), 
-    "BR": motor.DCMotor(pca.channels[10], pca.channels[11]), 
-    "FL": motor.DCMotor(pca.channels[12], pca.channels[13]), 
-    "FR": motor.DCMotor(pca.channels[14], pca.channels[15]) 
+    "FL": motor.DCMotor(pca.channels[8], pca.channels[9]), 
+    "BL": motor.DCMotor(pca.channels[11], pca.channels[10]), 
+    "FR": motor.DCMotor(pca.channels[13], pca.channels[12]), 
+    "BR": motor.DCMotor(pca.channels[14], pca.channels[15]) 
 }
 
 # encoder pins
 encoder_pins = {
-    "BL": 17,
-    "BR": 27,
-    "FL": 22,
-    "FR": 23
+    "FL": 1,
+    "BL": 7,
+    "FR": 8,
+    "BR": 25
 }
 
 pulse_counts = {"BL": 0, "BR": 0, "FL": 0, "FR": 0}
 # forwards
-motorSpeeds = {"BL": 0.46,"BR": 0.33,"FL": 0.47,"FR": 0.35}
+# motorSpeeds = {"BL": 0.46,"BR": 0.33,"FL": 0.47,"FR": 0.37} # old values
+
+# motorSpeeds = {"FL": 0.40, "BL": 0.36, "FR": 0.30, "BR": 0.40}
+# motorSpeeds = {"FL": 0.47, "BL": 0.37, "FR": 0.37,"BR": 0.46} new old values, not correct
+# motorSpeeds = {"FL": -0.30, "BL": -0.33 , "FR": -0.35,"BR": -0.42}
+
 # backwards
 # motorSpeeds = {"BL": -0.37,"BR": -0.42,"FL": -0.35,"FR": -0.39}
 # turn cw
-# motorSpeeds = {"BL": 0.46,"BR": -0.42,"FL": 0.47,"FR": -0.39}
-targetRPM = {"BL": 65,"BR": 65,"FL": 65,"FR": 65}
+motorSpeeds = {"BL": 0.46,"BR": -0.42,"FL": 0.47,"FR": -0.39}
+targetRPM = {"FL": 65,"BL": 65,"FR": -65 ,"BR": -65}
 integral = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
 currentRPM = {"BL": 0.0,"BR": 0.0,"FL": 0.0,"FR": 0.0}
 
@@ -74,17 +79,20 @@ time.sleep(dt * 5)
 for index in motors:
     pulse_counts[index] = 0
 
-for i in range(200):
-    print(currentRPM)
-    PiController(targetRPM, pulse_counts, integral, motorSpeeds, Kp)
-    
+try:
+    for i in range(200000000):
+        print(currentRPM)
+        PiController(targetRPM, pulse_counts, integral, motorSpeeds, Kp)
+        
+        for index in motors:
+            motors[index].throttle = motorSpeeds[index]
+
+        time.sleep(dt)
     for index in motors:
-        motors[index].throttle = motorSpeeds[index]
-
-    time.sleep(dt)
-for index in motors:
-    motors[index].throttle = 0.0
-
+        motors[index].throttle = 0.0
+except KeyboardInterrupt:
+    for index in motors:
+        motors[index].throttle = 0.0
 
     
     
