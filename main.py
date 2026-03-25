@@ -11,6 +11,9 @@ from controllers.sonarController import SonarController
 from model.model import Model
 from camera.camera import MyCamera as Camera
 
+from moveCommands.forwardsCommand import ForwardsCommand
+from moveCommands.backwardsCommand import BackwardsCommand
+
 # --- CONFIGURATION ---
 NAME = "plastic_cups_v8_gpu"
 PROJECT = "cup_project_v2"
@@ -59,13 +62,23 @@ try:
         model_ctrl=model_controller,
         color_ctrl=color_controller,
         sonar_ctrl=sonar_controller,
+        model=trained_model,
         camera=cam,
         target_hex=TARGET_HEX,
         timeout=SCAN_TIMEOUT
     )
 
+    # sonar_controller.set_sonar_active("L")
+    # sonar_controller.start_sonars(motor_controller)
+
+    # motor_controller.set_move_command(BackwardsCommand())
+
+    i = 0
     while True:
+        i += 1            
         robot_logic.run_state_logic()
+        
+        
         
 except KeyboardInterrupt:
     motor_controller.stop_movement()

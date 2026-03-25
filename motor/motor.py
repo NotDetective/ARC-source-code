@@ -3,10 +3,14 @@ from encoder.encoder import Encoder
 from motor.motorMovement import MotorMovement
 
 class Motor:
+    
+    __DEFAULT_MOTOR_RPM = 65
+    
     def __init__(self, aPositavePin, aNegativePin, aForwardSpeed, aBackwardSpeed, aEncoder):
         self.__motor = adaMotor.DCMotor(aPositavePin, aNegativePin)
         self.__forwardSpeed = aForwardSpeed
         self.__backwardSpeed = aBackwardSpeed
+        self.__rpm = self.__DEFAULT_MOTOR_RPM
         self.__encoder = aEncoder
         self.__current_throttle = 0.0
         self.__active_movement = None 
@@ -15,6 +19,11 @@ class Motor:
         self.__active_movement = aMotorMovement
         
     def run_motor(self, currentStep: int) -> None:
+        if self.__active_movement is None:
+            return  0
+        
+        movement_val = self.__active_movement.movement_value
+            
         movement_val = self.__active_movement.movement_value
         
         if currentStep <= 5:
@@ -24,12 +33,27 @@ class Motor:
                 self.__current_throttle = self.__backwardSpeed
             else:
                 self.__current_throttle = 0
+                
+            if currentStep == 5:
+                self.__encoder.reset_count()
         
         else:
-            target_rpm = 65 if movement_val >= 0.1 else -65
+            target_rpm = self.get_motor_rpm()
+            
             self.__current_throttle = self.__encoder.pi_controller(target_rpm, self.__current_throttle)
 
         self.__motor.throttle = self.__current_throttle
+        
+    def get_motor_rpm(self):
+        val = self.__active_movement.movement_value
+        if abs(val) < 0.1: return 0 
+        return self.__rpm if val > 0 else -self.__rpm
+    
+    def reset_rpm(self):
+        self.__rpm = self.__DEFAULT_MOTOR_RPM
+        
+    def set_motor_rpm(self, rpm):
+        self.__rpm = rpm
 
     def reset_encoder(self):
         self.__encoder.reset_count()

@@ -5,7 +5,7 @@ class Sonar:
         self.__distance_sensor = DistanceSensor(echo=echo, trigger=trigger)
         self.__is_active = False
         self.__trigger_distance = 100
-        self.__is_trigger = False
+        self.__is_triggerd = False
         
     def set_trigger_distance(self, distance):
         self.__trigger_distance = distance
@@ -31,6 +31,6 @@ class Sonar:
     
     def get_distance(self):
         if not self.__is_active:
-            return None
+            return 0
         return self.__distance_sensor.distance * 100
         

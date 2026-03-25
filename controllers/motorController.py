@@ -48,8 +48,10 @@ class MotorController:
         return self._stop_event.is_set()
     
     def set_move_command(self, aCommand: MoveCommand):
-        self._stop_event.set() 
+        self.stop_movement() 
+        time.sleep(self.__dt) 
         
+        self._stop_event.set() 
         self._move_thread = threading.Thread(
             target=self._execute_move_loop, 
             args=(aCommand, ),
@@ -67,15 +69,28 @@ class MotorController:
         while self._stop_event.is_set():    
            
             if i <= 6:
-                i += 1                     
+                i += 1
             
             for motor in self.__motors.values():
                 motor.run_motor(i) 
             
             time.sleep(self.__dt)
+         
+    def reset_all_motors_rpm(self):
+        for motor_object in self.__motors.values():
+            motor_object.reset_rpm()
+    
+    def reset_motor_rpm(self, motor):
+        if motor in self.__motors:
+            self.__motors[motor].reset_rpm()
+            
+    def set_motor_rpm(self, motor, rpm):
+        if motor in self.__motors:
+            self.__motors[motor].set_motor_rpm(rpm=rpm)
                     
     def stop_movement(self):
         self._stop_event.clear()
+        time.sleep(self.__dt * 2)
         self.stop_all()
         
     def stop_all(self):

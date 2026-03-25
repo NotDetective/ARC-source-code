@@ -6,13 +6,11 @@ class SonarController:
     
     def __init__(self):
         self.__sonars = {
-            # "L": DistanceSensor(echo=14, trigger=15),
-            # "R": DistanceSensor(echo=24, trigger=25),
-            # "ML",
-            # "MM",
-            # "MR"
-            # "L": Sonar(echo=14, trigger=15),
-            # "R": Sonar(echo=24, trigger=25)
+            # "L": Sonar(echo=16, trigger=12),
+            # "R": Sonar(echo=23, trigger=18)
+            # "FL": Sonar(echo=6, trigger=20)
+            # "FM": Sonar(echo=26, trigger=21)
+            # "FR": Sonar(echo=17, trigger=4)
         }
         
         self.__running = False
@@ -22,7 +20,7 @@ class SonarController:
         while self.__running:
             for name, sonar in self.__sonars.items():
                 if sonar.is_active:
-                    print(sonar.get_distance())
+                    print(f"sensor {name}: {sonar.get_distance()}")
                     if sonar.is_triggerd():
                         motor_controller.stop_movement()
             
