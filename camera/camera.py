@@ -17,6 +17,8 @@ class MyCamera:
 
     def start_camera(self):
         self.__cam = PiCam()
+        self.__cam.resolution = (640, 480)  # Set it once at the start
+        self.__cam.framerate = 32
         # Ensure correct orientation
         self.__cam.flip_camera(vflip=True, hflip=True)
 

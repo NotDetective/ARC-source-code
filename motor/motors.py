@@ -10,6 +10,8 @@ pca = PCA9685(i2c, address=0x60)
 pca.frequency = 1000
 chip = lgpio.gpiochip_open(0)
 
+
+
 # enable motor pins
 motors = { 
     "FL": motor.DCMotor(pca.channels[8], pca.channels[9]), 

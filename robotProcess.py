@@ -5,8 +5,8 @@ from moveCommands.rightCommand import RightCommand
 from moveCommands.clockwiseCommand import ClockwiseCommand
 
 class RobotProcess:
-    def __init__(self, motor, model_ctrl, color_ctrl, sonar_ctrl, vision, target_hex, model, timeout=40.0):
-        self.motor_ctrl = motor
+    def __init__(self, motor_ctrl, model_ctrl, color_ctrl, sonar_ctrl, vision, target_hex, model, timeout=40.0):
+        self.motor_ctrl = motor_ctrl
         self.model_ctrl = model_ctrl
         self.color_ctrl = color_ctrl
         self.sonar_ctrl = sonar_ctrl
@@ -17,65 +17,64 @@ class RobotProcess:
         # Constants
         self.IMG_WIDTH = 4608
         self.CENTER_POINT = self.IMG_WIDTH // 2
-        self.DEADZONE = 150  # Margin for centering
-        self.TARGET_SIZE_THRESHOLD = 250000  # When to stop/collect
-        self.SCAN_SPEED_RPM = 50
+        self.MARGIN = 150
+        self.GOAL_SIZE = 250000
 
     def run_robot_process(self):
-        """
-        Main execution loop. Call this inside a 'while True' in your main script.
-        """
-        # 1. Get live data
+        # 1. Gather all "Senses"
+        current_cmd = self.motor_ctrl.get_current_command()
+        is_moving = self.motor_ctrl.has_active_command()
+
+        if self.sonar_ctrl.is_blocked("FM") or self.sonar_ctrl.is_blocked("FR"):
+            if not isinstance(current_cmd, LeftCommand) or not is_moving:
+                print("!!! Obstacle Right/Center: Sliding LEFT !!!")
+                self.motor_ctrl.set_move_command(LeftCommand())
+            return "AVOIDING_LEFT"
+
+        # If something is in front-left, SLIDE RIGHT
+        if self.sonar_ctrl.is_blocked("FL"):
+            if not isinstance(current_cmd, RightCommand) or not is_moving:
+                print("!!! Obstacle Left: Sliding RIGHT !!!")
+                self.motor_ctrl.set_move_command(RightCommand())
+            return "AVOIDING_RIGHT"
+
         x, size = self.vision.get_data()
 
-        # 2. Logic: What do I see?
-
-        # SCENARIO A: Target is not in sight
+        # 3. Priority 2: Target Tracking (Vision)
         if x is None:
-            print("Target lost: Scanning...")
-            if not isinstance(self.motor_ctrl.get_current_command(), ClockwiseCommand) and not self.motor_ctrl.has_active_command():
+            # Not using isinstance(ClockwiseCommand) here because if we are 
+            # arcing around an obstacle, we don't want to suddenly spin.
+            if not isinstance(current_cmd, ClockwiseCommand) or not is_moving:
                 self.motor_ctrl.set_move_command(ClockwiseCommand())
-            return "SEARCHING"
+            return
 
-        # SCENARIO B: Target is reached (Close enough)
-        if size > self.TARGET_SIZE_THRESHOLD:
-            print("Target reached! Stopping.")
+        if size > self.GOAL_SIZE:
+            print("Target Reached.")
             self.motor_ctrl.stop_movement()
-            return "ARRIVED"
+            return
 
-        # SCENARIO C: Target is in sight, move toward it with steering
-        self.execute_proportional_drive(x)
-        return "APPROACHING"
+        # Normal vision-based steering
+        self.ensure_forward(current_cmd, is_moving)
+        self.apply_vision_steering(x)
 
-    def execute_proportional_drive(self, target_x):
-        """
-        Adjusts motor speeds on the fly to center the target while moving forward.
-        """
-
-        if not isinstance(self.motor_ctrl.get_current_command(), ForwardsCommand):
+    def ensure_forward(self, current_cmd, is_moving):
+        """Maintains the ForwardsCommand state using isinstance."""
+        if not isinstance(current_cmd, ForwardsCommand) or not is_moving:
             self.motor_ctrl.set_move_command(ForwardsCommand())
 
+    def apply_vision_steering(self, target_x):
         error = target_x - self.CENTER_POINT
-
-        # If centered within deadzone, full speed ahead
-        if abs(error) <= self.DEADZONE:
+        if abs(error) <= self.MARGIN:
             self.motor_ctrl.reset_all_motors_rpm()
-            print(f"Centered: Moving Straight (Error: {error:.2f})")
-
-        # If target is to the Left, slow down Left motors to pivot left
-        elif error < 0:
-            self.motor_ctrl.reset_motor_rpm("FR")
-            self.motor_ctrl.reset_motor_rpm("BR")
-            self.motor_ctrl.set_motor_rpm("FL", 40)
-            self.motor_ctrl.set_motor_rpm("BL", 40)
-            print(f"Adjusting LEFT (Error: {error:.2f})")
-
-        # If target is to the Right, slow down Right motors to pivot right
-        else:
-            self.motor_ctrl.reset_motor_rpm("FL")
-            self.motor_ctrl.reset_motor_rpm("BL")
-            self.motor_ctrl.set_motor_rpm("FR", 40)
-            self.motor_ctrl.set_motor_rpm("BR", 40)
-            print(f"Adjusting RIGHT (Error: {error:.2f})")
+        elif error < 0:  # Target is to the Left
+            self.motor_ctrl.set_motor_rpm("FL", 50)
+            self.motor_ctrl.set_motor_rpm("BL", 50)
+            self.motor_ctrl.set_motor_rpm("FR")
+            self.motor_ctrl.set_motor_rpm("BR")
+        else:  # Target is to the Right
+            self.motor_ctrl.set_motor_rpm("FR", 50)
+            self.motor_ctrl.set_motor_rpm("BR", 50)
+            self.motor_ctrl.set_motor_rpm("FL")
+            self.motor_ctrl.set_motor_rpm("BL")
 
 

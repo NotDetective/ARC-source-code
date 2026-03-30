@@ -20,9 +20,7 @@ class Motor:
         
     def run_motor(self, currentStep: int) -> None:
         if self.__active_movement is None:
-            return  0
-        
-        movement_val = self.__active_movement.movement_value
+            return
             
         movement_val = self.__active_movement.movement_value
         

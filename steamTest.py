@@ -3,13 +3,14 @@ import numpy as np
 import threading
 import time
 from flask import Flask, Response, render_template_string
-from picamzero import Camera
+import webcolors
 
 
 class VisionSystem:
-    def __init__(self, camera, port=5000):
+    def __init__(self, camera, target_hex="#FF00FF", port=5000):
         # 1. Setup Camera
         self.cam = camera
+        # Force low res for speed
         self.cam.res = (640, 480)
 
         # 2. State Variables
@@ -18,15 +19,71 @@ class VisionSystem:
         self.target_x = None
         self.target_area = 0
         self.running = True
+        self.target_hex = target_hex
 
-        # 3. HSV Ranges (Magenta)
-        self.lower_magenta = np.array([140, 70, 70])
-        self.upper_magenta = np.array([175, 255, 255])
+        # 3. Generate HSV Range from your HEX code
+        self.lower_hsv, self.upper_hsv = self.hex_to_hsv_range(self.target_hex)
 
         # 4. Flask Setup
         self.app = Flask(__name__)
         self.port = port
         self._setup_routes()
+
+    def hex_to_hsv_range(self, hex_code, h_tol=10, s_tol=70, v_tol=70):
+        """Your specific logic to convert HEX to OpenCV HSV ranges."""
+        rgb = webcolors.hex_to_rgb(hex_code)
+        # OpenCV BGR format
+        pixel = np.uint8([[[rgb.blue, rgb.green, rgb.red]]])
+        hsv = cv2.cvtColor(pixel, cv2.COLOR_BGR2HSV)[0][0]
+
+        h, s, v = hsv[0], hsv[1], hsv[2]
+        lower = np.array([max(0, h - h_tol), max(40, s - s_tol), max(40, v - v_tol)])
+        upper = np.array([min(179, h + h_tol), min(255, s + s_tol), min(255, v + v_tol)])
+        return lower, upper
+
+    def _vision_loop(self):
+        """High-speed background thread."""
+        while self.running:
+            # CAPTURE: Direct to array (No disk I/O)
+            frame = self.cam.get_cam().capture_array()
+
+            # CONVERT: RGB (PiCam) to BGR (OpenCV)
+            bgr_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            hsv = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2HSV)
+
+            # MASKING: Using your calculated HEX ranges
+            mask = cv2.inRange(hsv, self.lower_hsv, self.upper_hsv)
+
+            # CLEANUP: Erode/Dilate to remove noise
+            mask = cv2.erode(mask, None, iterations=2)
+            mask = cv2.dilate(mask, None, iterations=2)
+
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            found_x, found_area = None, 0
+            if contours:
+                # Find the largest blob matching your color
+                largest = max(contours, key=cv2.contourArea)
+                found_area = cv2.contourArea(largest)
+
+                if found_area > 500:  # Threshold to ignore tiny spots
+                    M = cv2.moments(largest)
+                    if M["m00"] != 0:
+                        found_x = int(M["m10"] / M["m00"])
+                        # Draw on the BGR frame for the Web Stream
+                        cv2.drawContours(bgr_frame, [largest], -1, (0, 255, 0), 2)
+                        cv2.circle(bgr_frame, (found_x, int(M["m01"] / M["m00"])), 5, (0, 0, 255), -1)
+
+            # Thread-safe update
+            with self.lock:
+                self.target_x = found_x
+                self.target_area = found_area
+                self.output_frame = bgr_frame
+
+    def get_data(self):
+        """The robot calls this to get the latest X and Area."""
+        with self.lock:
+            return self.target_x, self.target_area
 
     def _setup_routes(self):
         @self.app.route('/')
@@ -51,38 +108,6 @@ class VisionSystem:
                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
             time.sleep(0.03)  # Cap stream at ~30FPS to save bandwidth
 
-    def _vision_loop(self):
-        """Background thread: Camera -> Math -> Draw."""
-        while self.running:
-            # Grab raw RGB frame
-            frame = self.cam.get_cam().capture_array()
-
-            # Convert to BGR for the Web/OpenCV (No blue filter!)
-            bgr_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
-            # Tracking Logic
-            hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
-            mask = cv2.inRange(hsv, self.lower_magenta, self.upper_magenta)
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            found_x, found_area = None, 0
-            if contours:
-                largest = max(contours, key=cv2.contourArea)
-                found_area = cv2.contourArea(largest)
-                if found_area > 500:
-                    M = cv2.moments(largest)
-                    if M["m00"] != 0:
-                        found_x = int(M["m10"] / M["m00"])
-                        # Draw visuals for the web stream
-                        cv2.drawContours(bgr_frame, [largest], -1, (0, 255, 0), 2)
-                        cv2.circle(bgr_frame, (found_x, int(M["m01"] / M["m00"])), 5, (255, 255, 255), -1)
-
-            # Update public variables for the main script
-            with self.lock:
-                self.target_x = found_x
-                self.target_area = found_area
-                self.output_frame = bgr_frame
-
     def start(self):
         """Starts both the Vision Thread and the Web Server."""
         # Start Vision
@@ -96,7 +121,3 @@ class VisionSystem:
         st.daemon = True
         st.start()
         print(f"[*] Vision System Online at http://localhost:{self.port}")
-
-    def get_data(self):
-        """Returns the latest target data to your main loop."""
-        return self.target_x, self.target_area

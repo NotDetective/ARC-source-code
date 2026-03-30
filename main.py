@@ -40,6 +40,9 @@ except Exception as e:
 pca.frequency = 1000
 chip = lgpio.gpiochip_open(0)
 
+for i in range(16):
+    pca.channels[i].duty_cycle = 0
+
 # --- MODEL SETUP ---
 model = Model(PROJECT, NAME)
 if model.check_for_trained_model():
@@ -53,7 +56,7 @@ model_controller = ModelController()
 color_controller = ColorController()
 sonar_controller = SonarController()
 cam = Camera()
-vision = VisionSystem(camera=cam)
+vision = VisionSystem(camera=cam, target_hex=TARGET_HEX)
 
 # --- STARTS ---
 cam.start_camera()
@@ -62,7 +65,7 @@ vision.start()
 
 try:
     robot_logic = RobotProcess(
-        motor=motor_controller,
+        motor_ctrl=motor_controller,
         model_ctrl=model_controller,
         color_ctrl=color_controller,
         sonar_ctrl=sonar_controller,
@@ -71,6 +74,9 @@ try:
         target_hex=TARGET_HEX,
         timeout=SCAN_TIMEOUT
     )
+
+    sonar_controller.set_sonars_active()
+    sonar_controller.start_sonars()
 
     while True:
       robot_logic.run_robot_process()

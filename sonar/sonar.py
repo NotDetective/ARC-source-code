@@ -1,10 +1,16 @@
 from gpiozero import DistanceSensor
 
 class Sonar:
-    def __init__(self, echo=0, trigger=0):
-        self.__distance_sensor = DistanceSensor(echo=echo, trigger=trigger)
+    def __init__(self, echo=0, trigger=0,max_dist=0.3):
+        # gpiozero uses METERS for max_distance.
+        # 1.0 means it ignores anything further than 1 meter.
+        self.__distance_sensor = DistanceSensor(
+            echo=echo,
+            trigger=trigger,
+            queue_len=1
+        )
         self.__is_active = False
-        self.__trigger_distance = 100
+        self.__trigger_distance = 20
         self.__is_triggerd = False
         
     def set_trigger_distance(self, distance):

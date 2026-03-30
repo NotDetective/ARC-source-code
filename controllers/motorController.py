@@ -86,7 +86,7 @@ class MotorController:
         if motor in self.__motors:
             self.__motors[motor].reset_rpm()
             
-    def set_motor_rpm(self, motor, rpm):
+    def set_motor_rpm(self, motor, rpm=65):
         if motor in self.__motors:
             self.__motors[motor].set_motor_rpm(rpm=rpm)
 
