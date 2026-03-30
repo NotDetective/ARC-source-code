@@ -18,13 +18,14 @@ servo_mg996r = servo.Servo(pca.channels[1], min_pulse=500, max_pulse=2500)
 
 def test_range(servo_obj, name):
     print(f"Testing {name}...")
-    servo_obj.angle = 40
+    servo_obj.angle = 0
     time.sleep(1)
-    servo_obj.angle = 150
+    servo_obj.angle = 180
     time.sleep(1)
-    servo_obj.angle = 40 # Center it
+    servo_obj.angle = 90 # Center it
 
 try:
-    test_range(servo_mg996r, "MG996R on PWM1")
+    test_range(servo_sg90, "SG90 on PWM0")
+    # test_range(servo_mg996r, "MG996R on PWM1")
 finally:
     pca.deinit()

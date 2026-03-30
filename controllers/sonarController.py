@@ -6,11 +6,11 @@ class SonarController:
     
     def __init__(self):
         self.__sonars = {
-            # "L": Sonar(echo=16, trigger=12),
-            # "R": Sonar(echo=23, trigger=18)
-            # "FL": Sonar(echo=6, trigger=20)
-            # "FM": Sonar(echo=26, trigger=21)
-            # "FR": Sonar(echo=17, trigger=4)
+            "L": Sonar(echo=12, trigger=16),
+            "R": Sonar(echo=18, trigger=23),
+            "FL": Sonar(echo=20, trigger=6),
+            # "FM": Sonar(echo=21, trigger=26),
+            "FR": Sonar(echo=4, trigger=17),
         }
         
         self.__running = False
