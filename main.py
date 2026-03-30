@@ -8,6 +8,7 @@ from controllers.motorController import MotorController
 from controllers.modelController import ModelController
 from controllers.colorController import ColorController
 from controllers.sonarController import SonarController
+from steamTest import  VisionSystem
 from model.model import Model
 from camera.camera import MyCamera as Camera
 
@@ -18,11 +19,10 @@ from moveCommands.backwardsCommand import BackwardsCommand
 NAME = "plastic_cups_v8_gpu"
 PROJECT = "cup_project_v2"
 TARGET_HEX = "#b43384"
-SCAN_TIMEOUT = 40.0 
-
+SCAN_TIMEOUT = 40.0
+USE_STREAMER = True  # Toggle this to False if you don't need the web view
 
 # --- HARDWARE SETUP ---
-
 try:
     i2c = board.I2C()
     pca = PCA9685(i2c, address=0x60)
@@ -47,43 +47,40 @@ if model.check_for_trained_model():
 else:
     raise Exception("Please provide a valid YOLO model")
 
+# --- CONTROLLER SETUP ---
 motor_controller = MotorController(pca, chip)
 model_controller = ModelController()
 color_controller = ColorController()
 sonar_controller = SonarController()
-cam = Camera()  
+cam = Camera()
+vision = VisionSystem(camera=cam)
 
 # --- STARTS ---
 cam.start_camera()
+vision.start()
 
-try:   
+
+try:
     robot_logic = RobotProcess(
         motor=motor_controller,
         model_ctrl=model_controller,
         color_ctrl=color_controller,
         sonar_ctrl=sonar_controller,
         model=trained_model,
-        camera=cam,
+        vision=vision,
         target_hex=TARGET_HEX,
         timeout=SCAN_TIMEOUT
     )
 
-    # sonar_controller.set_sonar_active("L")
-    # sonar_controller.start_sonars(motor_controller)
-
-    # motor_controller.set_move_command(BackwardsCommand())
-
-    i = 0
     while True:
-        i += 1            
-        robot_logic.run_state_logic()
-        
-        
-        
+      robot_logic.run_robot_process()
+
 except KeyboardInterrupt:
+    print("\n[!] Stopping Robot...")
     motor_controller.stop_movement()
+    cam.stop_camera()  # Ensure camera is released
 except Exception as e:
     motor_controller.stop_movement()
+    cam.stop_camera()
     print("--- FULL ERROR TRACEBACK ---")
-    traceback.print_exc() 
-    print("----------------------------")
+    traceback.print_exc()

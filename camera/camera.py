@@ -1,33 +1,34 @@
 import os
+import numpy as np
 from picamzero import Camera as PiCam
+
 
 class MyCamera:
     def __init__(self):
         self.__cam = None
         self.folder = "images"
         self.__FOV = 120
-        
+
         if not os.path.exists(self.folder):
             os.makedirs(self.folder)
-            
+
     def get_FOV(self):
         return self.__FOV
 
     def start_camera(self):
-        cam = PiCam()
-        cam.flip_camera(vflip=True, hflip=True)
-        self.__cam = cam
+        self.__cam = PiCam()
+        # Ensure correct orientation
+        self.__cam.flip_camera(vflip=True, hflip=True)
 
-    def take_photo(self, name):
+    def get_cam(self):
+        return self.__cam
+
+    def get_frame(self):
+        """Returns the frame as an RGB numpy array."""
         if self.__cam is None:
-            print("Error: Camera not started!")
-            return
-            
-        if not name.endswith(".jpg"):
-            name += ".jpg" 
-        
-        path = os.path.join(self.folder, name)
-        
-        self.__cam.take_photo(path)
-        print(f"Photo saved to: {path}")
-        return path
+            return None
+        return np.array(self.__cam.capture_array())
+
+    def stop_camera(self):
+        if self.__cam:
+            self.__cam.stop_preview()

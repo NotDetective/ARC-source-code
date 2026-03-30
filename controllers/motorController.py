@@ -42,15 +42,17 @@ class MotorController:
                 Encoder(25, aChip)
             )
         }
+        self.__current_command= None
         self.__dt = 0.05
         
     def has_active_command(self):
         return self._stop_event.is_set()
     
     def set_move_command(self, aCommand: MoveCommand):
-        self.stop_movement() 
+        self.stop_movement()
         time.sleep(self.__dt) 
-        
+        self.__current_command = aCommand
+
         self._stop_event.set() 
         self._move_thread = threading.Thread(
             target=self._execute_move_loop, 
@@ -87,10 +89,14 @@ class MotorController:
     def set_motor_rpm(self, motor, rpm):
         if motor in self.__motors:
             self.__motors[motor].set_motor_rpm(rpm=rpm)
+
+    def get_current_command(self):
+        return self.__current_command
                     
     def stop_movement(self):
         self._stop_event.clear()
         time.sleep(self.__dt * 2)
+        self.__current_command = None
         self.stop_all()
         
     def stop_all(self):
