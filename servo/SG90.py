@@ -16,10 +16,7 @@ pca.frequency = 50  # Servos typically run at 50Hz
 servo_sg90 = servo.Servo(pca.channels[0], min_pulse=500, max_pulse=2500)
 
 def move_servo_slowly(servo_obj, start_angle, end_angle, step_delay=0.005):
-    """
-    Moves the servo one degree at a time.
-    step_delay: seconds to wait between each degree (smaller = faster)
-    """
+
     # Determine the direction of movement (up or down)
     step = 1 if end_angle > start_angle else -1
     

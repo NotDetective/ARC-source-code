@@ -14,18 +14,31 @@ pca.frequency = 50  # Servos typically run at 50Hz
 # 3. Initialize Servo on PWM0 (J2) and PWM1 (J3)
 # Note: min_pulse and max_pulse are usually 500 to 2500 for full range
 servo_sg90 = servo.Servo(pca.channels[0], min_pulse=500, max_pulse=2500)
-# servo_mg996r = servo.Servo(pca.channels[1], min_pulse=500, max_pulse=2500)
+servo_mg996r = servo.Servo(pca.channels[1], min_pulse=500, max_pulse=2500)
 
-def test_range(servo_obj, name):
-    print(f"Testing {name}...")
-    servo_obj.angle = 0
-    time.sleep(1)
-    servo_obj.angle = 180
-    time.sleep(1)
-    servo_obj.angle = 90 # Center it
+def move_servo_slowly(servo_obj, start_angle, end_angle, step_delay=0.005):
 
+    # Determine the direction of movement (up or down)
+    step = 1 if end_angle > start_angle else -1
+    
+    for angle in range(start_angle, end_angle + step, step):
+        servo_obj.angle = angle
+        time.sleep(step_delay)
+
+def test_range(sg90, mg996r):
+    # mg996r.angle = 180
+    # time.sleep(1)
+    # move_servo_slowly(servo_sg90, 150, 100, 0.005)
+    # time.sleep(1)
+    mg996r.angle = 55
+    time.sleep(1)
+    move_servo_slowly(servo_sg90, 100, 150, 0.005)
+    time.sleep(1)
+    mg996r.angle = 180
+    time.sleep(1)
+    move_servo_slowly(servo_sg90, 150, 100, 0.005)
+    
 try:
-    test_range(servo_sg90, "SG90 on PWM0")
-    # test_range(servo_mg996r, "MG996R on PWM1")
+    test_range(servo_sg90, servo_mg996r)
 finally:
     pca.deinit()
