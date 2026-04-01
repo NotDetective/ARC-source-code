@@ -8,6 +8,9 @@ class ServoController:
         self.servo_sg90 = servo.Servo(pca.channels[0], min_pulse=500, max_pulse=2500)
         self.servo_mg996r = servo.Servo(pca.channels[1], min_pulse=500, max_pulse=2500)
 
+        self.SERVO_OPEN = 90
+        self.SERVO_CLOSE = 150
+
         self.set_pca()
         self.open_sg90()
         time.sleep(0.8)
@@ -43,10 +46,10 @@ class ServoController:
         self.servo_mg996r.angle = 170
 
     def open_sg90(self):
-        self.__move_servo_slowly(self.servo_sg90, 150, 100, 0.005)
+        self.__move_servo_slowly(self.servo_sg90, self.SERVO_CLOSE, self.SERVO_OPEN, 0.005)
 
     def close_sg90(self):
-        self.__move_servo_slowly(self.servo_sg90, 100, 150, 0.005)
+        self.__move_servo_slowly(self.servo_sg90, self.SERVO_OPEN, self.SERVO_CLOSE, 0.005)
 
 
 
