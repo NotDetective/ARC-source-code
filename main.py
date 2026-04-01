@@ -3,6 +3,8 @@ import lgpio
 import traceback
 from sys import exit
 from adafruit_pca9685 import PCA9685
+
+from controllers.servoController import ServoController
 from robotProcess import RobotProcess
 from controllers.motorController import MotorController
 from controllers.modelController import ModelController
@@ -19,7 +21,6 @@ from moveCommands.backwardsCommand import BackwardsCommand
 NAME = "plastic_cups_v8_gpu"
 PROJECT = "cup_project_v2"
 TARGET_HEX = "#b43384"
-SCAN_TIMEOUT = 40.0
 USE_STREAMER = True  # Toggle this to False if you don't need the web view
 
 # --- HARDWARE SETUP ---
@@ -37,23 +38,15 @@ except Exception as e:
     print("-" * 40)
     exit(1)
 
-pca.frequency = 1000
+pca.frequency = 300
 chip = lgpio.gpiochip_open(0)
 
 for i in range(16):
     pca.channels[i].duty_cycle = 0
 
-# --- MODEL SETUP ---
-model = Model(PROJECT, NAME)
-if model.check_for_trained_model():
-    trained_model = model.get_trained_model()
-else:
-    raise Exception("Please provide a valid YOLO model")
-
 # --- CONTROLLER SETUP ---
 motor_controller = MotorController(pca, chip)
-model_controller = ModelController()
-color_controller = ColorController()
+servo_controller = ServoController(pca)
 sonar_controller = SonarController()
 cam = Camera()
 vision = VisionSystem(camera=cam, target_hex=TARGET_HEX)
@@ -62,17 +55,14 @@ vision = VisionSystem(camera=cam, target_hex=TARGET_HEX)
 cam.start_camera()
 vision.start()
 
-
 try:
     robot_logic = RobotProcess(
         motor_ctrl=motor_controller,
-        model_ctrl=model_controller,
-        color_ctrl=color_controller,
         sonar_ctrl=sonar_controller,
-        model=trained_model,
+        servo_ctrl=servo_controller,
         vision=vision,
+        pca=pca,
         target_hex=TARGET_HEX,
-        timeout=SCAN_TIMEOUT
     )
 
     sonar_controller.set_sonars_active()

@@ -10,7 +10,7 @@ class Sonar:
             queue_len=1
         )
         self.__is_active = False
-        self.__trigger_distance = 20
+        self.__trigger_distance = 10
         self.__is_triggerd = False
         
     def set_trigger_distance(self, distance):

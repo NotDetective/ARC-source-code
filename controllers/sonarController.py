@@ -21,9 +21,6 @@ class SonarController:
     def __single_sonar_loop(self, name, sonar):
         while self.__running:
             if sonar.is_active():
-
-                print( f"{name}: {sonar.is_triggerd()}")
-
                 # If a front sensor is triggered, set a flag immediately
                 if sonar.is_triggerd():
                     self.obstacles[name] = True
@@ -56,3 +53,12 @@ class SonarController:
 
     def stop_all(self):
         self.__running = False
+
+    def set_sonar_trigger_distance(self, sonar: str, range_val: float):
+        if sonar in self.__sonars:
+            self.__sonars[sonar].set_trigger_distance(range_val)
+
+    def get_sonar_distance(self, sonar : str):
+        if sonar in self.__sonars:
+            return self.__sonars[sonar].get_distance()
+        return None
