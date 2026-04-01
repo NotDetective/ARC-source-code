@@ -81,13 +81,19 @@ class MotorController:
     def reset_all_motors_rpm(self):
         for motor_object in self.__motors.values():
             motor_object.reset_rpm()
-    
+
     def reset_motor_rpm(self, motor):
-        if motor in self.__motors:
+        if motor == 'ALL':
+            for motor_obj in self.__motors.values():
+                motor_obj.reset_rpm()
+        elif motor in self.__motors:
             self.__motors[motor].reset_rpm()
-            
+
     def set_motor_rpm(self, motor, rpm=65):
-        if motor in self.__motors:
+        if motor == 'ALL':
+            for motor_obj in self.__motors.values():
+                motor_obj.set_motor_rpm(rpm=rpm)
+        elif motor in self.__motors:
             self.__motors[motor].set_motor_rpm(rpm=rpm)
 
     def get_current_command(self):

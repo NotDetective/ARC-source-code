@@ -5,17 +5,14 @@ from sys import exit
 from adafruit_pca9685 import PCA9685
 
 from controllers.servoController import ServoController
-from robotProcess import RobotProcess
+from core.robotProcess import RobotProcess
 from controllers.motorController import MotorController
 from controllers.modelController import ModelController
 from controllers.colorController import ColorController
 from controllers.sonarController import SonarController
-from steamTest import  VisionSystem
+from core.visionSystem import  VisionSystem
 from model.model import Model
 from camera.camera import MyCamera as Camera
-
-from moveCommands.forwardsCommand import ForwardsCommand
-from moveCommands.backwardsCommand import BackwardsCommand
 
 # --- CONFIGURATION ---
 NAME = "plastic_cups_v8_gpu"

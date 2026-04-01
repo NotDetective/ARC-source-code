@@ -83,17 +83,16 @@ class RobotProcess:
         error = x - self.CENTER_POINT if x is not None else 999
 
         dist = self.sonar_ctrl.get_sonar_distance("FM")
-        print(f"Target Centered. Distance: {dist}cm")
+        # print(f"Target Centered. Distance: {dist}cm")
 
         if dist < 17:
-            print("Too close! Backing up...")
             if not isinstance(current_cmd, BackwardsCommand) or not is_moving:
                 self.motor_ctrl.set_move_command(BackwardsCommand())
             return "ADJUSTING_BACK"
 
         if abs(error) <= self.MARGIN:
             print(self.sonar_ctrl.get_sonar_distance("FM"))
-            if self.sonar_ctrl.get_sonar_distance("FM") < 20:
+            if  self.sonar_ctrl.get_sonar_distance("FM") < 20 or  self.sonar_ctrl.get_sonar_distance("FL") < 20 or  self.sonar_ctrl.get_sonar_distance("FR") < 20:
 
                 if not isinstance(current_cmd, BackwardsCommand) or not is_moving:
                     self.motor_ctrl.reset_all_motors_rpm()
@@ -104,26 +103,31 @@ class RobotProcess:
             self.collect_cup()
             return
 
+        sleep_time = abs(error) / 3000
 
-        sleep_time = abs(error) / 2000
+        print(sleep_time)
+        print(error)
+
         if error > 0:
             # Target is to the Right -> Pivot Right
             if not isinstance(current_cmd, ClockwiseCommand) or not is_moving:
-                print(f"Aligning Right... Error: {error}")
                 # Optional: You can set lower RPM for more precision
                 self.motor_ctrl.set_motor_rpm("ALL", 20)
+                time.sleep(0.1)
                 self.motor_ctrl.set_move_command(ClockwiseCommand())
                 time.sleep(sleep_time)
                 self.motor_ctrl.stop_movement()
+                self.motor_ctrl.reset_all_motors_rpm()
         else:
             # Target is to the Left -> Pivot Left
             # (Assuming you have a CounterClockwise or LeftPivot command)
             if not isinstance(current_cmd, CounterClockwiseCommand) or not is_moving:
-                print(f"Aligning Left... Error: {error}")
                 self.motor_ctrl.set_motor_rpm("ALL", 20)
+                time.sleep(0.1)
                 self.motor_ctrl.set_move_command(CounterClockwiseCommand())
                 time.sleep(sleep_time)
                 self.motor_ctrl.stop_movement()
+                self.motor_ctrl.reset_all_motors_rpm()
         return "DONE"
 
     def handle_search(self, current_cmd, is_moving):
@@ -166,24 +170,21 @@ class RobotProcess:
         self.servo_ctrl.set_pca()
         time.sleep(0.1)  # Give the chip a moment to stabilize
 
-        # 3. Prepare Servo (Arm down/Open)
         print("Lowering Arm...")
         self.servo_ctrl.lower_mg996r()
-        time.sleep(0.8)  # Wait for physical movement
+        time.sleep(0.8)
 
-        # 4. Drive Forward to "Grab" the cup
-        # Note: We do NOT change frequency to 1000 here!
         print("Driving Forward into cup...")
         self.motor_ctrl.set_move_command(ForwardsCommand())
-        time.sleep(0.5)
+        time.sleep(1.0)
         self.motor_ctrl.stop_movement()
 
         self.servo_ctrl.close_sg90()
-        time.sleep(0.8)
+        time.sleep(1.0)
         self.servo_ctrl.raise_mg996r()
         time.sleep(0.8)
         self.servo_ctrl.open_sg90()
-        time.sleep(1.0)  # Wait for arm to finish lifting
+        time.sleep(1.0)
 
         self.servo_ctrl.return_pca()
         print("Collection Complete.")
