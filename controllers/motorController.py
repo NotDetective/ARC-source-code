@@ -1,40 +1,111 @@
+import time
+import threading
 from motor.motor import Motor
 from encoder.encoder import Encoder
+from moveCommands.moveCommand import MoveCommand
 
 class MotorController:
-
-    def __init__(self, aPca):
+    def __init__(self, aPca, aChip):
+        self._stop_event = threading.Event()
+        self._move_thread = None
         self.__motors = {
-            "BL": Motor(
+            # Motor shield M1 
+            "FL": Motor(
                 aPca.channels[8],
                 aPca.channels[9],
-                0.0,  # initial forward speed
-                0.0,  # initial backward speed
-                Encoder(17)
+                0.47,  # initial forward speed
+                -0.35,  # initial backward speed
+                Encoder(1, aChip)
             ),
-            "BR": Motor(
-                aPca.channels[10],
+            # Motor shield M2
+            "BL": Motor(
                 aPca.channels[11],
-                0.0,  # initial forward speed
-                0.0,  # initial backward speed
-                Encoder(27)
+                aPca.channels[10],
+                0.46,  # initial forward speed
+                -0.37,  # initial backward speed
+                Encoder(7, aChip)
             ),
-            "FL": Motor(
-                aPca.channels[12],
-                aPca.channels[13],
-                0.0,  # initial forward speed
-                0.0,  # initial backward speed
-                Encoder(22)
-            ),
+            # Motor shield M3 
             "FR": Motor(
+                aPca.channels[13],
+                aPca.channels[12],
+                0.37,  # initial forward speed
+                -0.39,  # initial backward speed
+                Encoder(8, aChip)
+            ),
+            # Motor shield M4
+            "BR": Motor(
                 aPca.channels[14],
                 aPca.channels[15],
-                0.0,  # initial forward speed
-                0.0,  # initial backward speed
-                Encoder(23)
+                0.33,  # initial forward speed
+                -0.42,  # initial backward speed
+                Encoder(25, aChip)
             )
         }
+        self.__current_command= None
+        self.__dt = 0.05
+        
+    def has_active_command(self):
+        return self._stop_event.is_set()
     
-    def give_move_command(self):
-        pass
+    def set_move_command(self, aCommand: MoveCommand):
+        self.stop_movement()
+        time.sleep(self.__dt) 
+        self.__current_command = aCommand
+
+        self._stop_event.set() 
+        self._move_thread = threading.Thread(
+            target=self._execute_move_loop, 
+            args=(aCommand, ),
+            daemon=True 
+        )
+        self._move_thread.start()
+
+    def _execute_move_loop(self, aCommand: MoveCommand):
+        aCommand.motor_command(
+            self.__motors["FL"], self.__motors["FR"], 
+            self.__motors["BL"], self.__motors["BR"]
+        )
+
+        i = 0
+        while self._stop_event.is_set():    
+           
+            if i <= 6:
+                i += 1
+            
+            for motor in self.__motors.values():
+                motor.run_motor(i) 
+            
+            time.sleep(self.__dt)
+         
+    def reset_all_motors_rpm(self):
+        for motor_object in self.__motors.values():
+            motor_object.reset_rpm()
+
+    def reset_motor_rpm(self, motor):
+        if motor == 'ALL':
+            for motor_obj in self.__motors.values():
+                motor_obj.reset_rpm()
+        elif motor in self.__motors:
+            self.__motors[motor].reset_rpm()
+
+    def set_motor_rpm(self, motor, rpm=65):
+        if motor == 'ALL':
+            for motor_obj in self.__motors.values():
+                motor_obj.set_motor_rpm(rpm=rpm)
+        elif motor in self.__motors:
+            self.__motors[motor].set_motor_rpm(rpm=rpm)
+
+    def get_current_command(self):
+        return self.__current_command
+                    
+    def stop_movement(self):
+        self._stop_event.clear()
+        time.sleep(self.__dt * 2)
+        self.__current_command = None
+        self.stop_all()
+        
+    def stop_all(self):
+        for motor in self.__motors.values():
+            motor.stop()
 
