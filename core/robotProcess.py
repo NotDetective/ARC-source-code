@@ -180,7 +180,6 @@ class RobotProcess:
         self.motor_ctrl.stop_movement()
         self.motor_ctrl.reset_all_motors_rpm()
 
-        self.servo_ctrl.set_pca()
         time.sleep(0.2)
 
         self.servo_ctrl.lower_mg996r()
@@ -197,6 +196,4 @@ class RobotProcess:
         time.sleep(1.0)
         self.servo_ctrl.open_sg90()
         time.sleep(0.5)
-
-        self.servo_ctrl.return_pca()
         print("--- Sequence Complete ---")

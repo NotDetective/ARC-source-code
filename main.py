@@ -68,7 +68,7 @@ try:
 
     while True:
         robot_logic.run_robot_process()
-        time.sleep(0.01)  # CRITICAL: Yield CPU to vision and sonar threads!
+        time.sleep(0.01)
 
 except KeyboardInterrupt:
     print("\n[!] Stopping Robot...")

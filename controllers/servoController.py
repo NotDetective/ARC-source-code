@@ -11,12 +11,10 @@ class ServoController:
         self.SERVO_OPEN = 90
         self.SERVO_CLOSE = 150
 
-        self.set_pca()
         self.open_sg90()
         time.sleep(0.8)
         self.raise_mg996r()
         time.sleep(0.8)
-        self.return_pca()
 
     def __move_servo_slowly(self, servo_obj, start_angle, end_angle, step_delay=0.005):
         # Determine the direction of movement (up or down)
@@ -25,19 +23,6 @@ class ServoController:
         for angle in range(start_angle, end_angle + step, step):
             servo_obj.angle = angle
             time.sleep(step_delay)
-
-    def set_pca(self):
-        print("fuck no")
-        # if self.pca.frequency != 50:
-        #     self.pca.frequency = 50
-
-    def return_pca(self):
-        print("fuck no 2")
-        # if self.pca.frequency != 1000:
-        #     self.pca.frequency = 1000
-        #
-        #     for i in range(16):
-        #         self.pca.channels[i].duty_cycle = 0
 
     def lower_mg996r(self):
         self.servo_mg996r.angle = 55

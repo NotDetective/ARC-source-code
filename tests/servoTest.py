@@ -33,7 +33,7 @@ def test_range(sg90, mg996r):
     mg996r.angle = 55
     time.sleep(1)
     move_servo_slowly(servo_sg90, 100, 150, 0.005)
-    time.sleep(1)
+    time.sleep(2)
     mg996r.angle = 170
     time.sleep(1)
     move_servo_slowly(servo_sg90, 150, 100, 0.005)
