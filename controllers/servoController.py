@@ -43,7 +43,7 @@ class ServoController:
         self.servo_mg996r.angle = 55
 
     def raise_mg996r(self):
-        self.servo_mg996r.angle = 170
+        self.servo_mg996r.angle = 180
 
     def open_sg90(self):
         self.__move_servo_slowly(self.servo_sg90, self.SERVO_CLOSE, self.SERVO_OPEN, 0.005)

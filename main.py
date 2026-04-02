@@ -1,6 +1,7 @@
 import board
 import lgpio
 import traceback
+import time
 from sys import exit
 from adafruit_pca9685 import PCA9685
 
@@ -18,7 +19,7 @@ from camera.camera import MyCamera as Camera
 NAME = "plastic_cups_v8_gpu"
 PROJECT = "cup_project_v2"
 TARGET_HEX = "#b43384"
-USE_STREAMER = True  # Toggle this to False if you don't need the web view
+USE_STREAMER = True
 
 # --- HARDWARE SETUP ---
 try:
@@ -66,12 +67,13 @@ try:
     sonar_controller.start_sonars()
 
     while True:
-      robot_logic.run_robot_process()
+        robot_logic.run_robot_process()
+        time.sleep(0.01)  # CRITICAL: Yield CPU to vision and sonar threads!
 
 except KeyboardInterrupt:
     print("\n[!] Stopping Robot...")
     motor_controller.stop_movement()
-    cam.stop_camera()  # Ensure camera is released
+    cam.stop_camera()
 except Exception as e:
     motor_controller.stop_movement()
     cam.stop_camera()
