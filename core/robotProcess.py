@@ -27,6 +27,7 @@ class RobotProcess:
         self.MARGIN = 150
         self.DEADZONE = 60
 
+        self.MIN_COLLECT_DISTANCE = 16
         self.ALIGN_DISTANCE = 16
         self.COLLECT_THRESHOLD = 23
 
@@ -139,7 +140,7 @@ class RobotProcess:
         dist_fr = self.sonar_ctrl.get_sonar_distance("FR")
 
         # 1. THE SONAR SKIP
-        if 5 < dist_fm < self.COLLECT_THRESHOLD:
+        if self.MIN_COLLECT_DISTANCE < dist_fm < self.COLLECT_THRESHOLD:
             print(f"Bypassing alignment. Sonar confirmed cup at {dist_fm}cm.")
             self.motor_ctrl.stop_movement()
             self.collect_cup()
