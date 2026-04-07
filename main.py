@@ -2,17 +2,14 @@ import board
 import lgpio
 import traceback
 import time
-from sys import exit
+import signal
+import os
 from adafruit_pca9685 import PCA9685
-
 from controllers.servoController import ServoController
 from core.robotProcess import RobotProcess
 from controllers.motorController import MotorController
-from controllers.modelController import ModelController
-from controllers.colorController import ColorController
 from controllers.sonarController import SonarController
 from core.visionSystem import  VisionSystem
-from model.model import Model
 from camera.camera import MyCamera as Camera
 
 # --- CONFIGURATION ---
@@ -20,6 +17,14 @@ NAME = "plastic_cups_v8_gpu"
 PROJECT = "cup_project_v2"
 TARGET_HEX = "#b43384"
 USE_STREAMER = True
+
+# --- Shutdown Handler ---
+def handle_stop_signal(signum, frame):
+    print("\n[!] Stop command received from Button Launcher...")
+    raise KeyboardInterrupt
+
+# Register to SIGUSR1 instead of SIGTERM
+signal.signal(signal.SIGUSR1, handle_stop_signal)
 
 # --- HARDWARE SETUP ---
 try:
@@ -71,11 +76,16 @@ try:
         time.sleep(0.01)
 
 except KeyboardInterrupt:
-    print("\n[!] Stopping Robot...")
+    print("\n[!] Stop button pressed: Cleaning up...")
     motor_controller.stop_movement()
     cam.stop_camera()
+
 except Exception as e:
+    print(f"[!!] Unexpected Error: {e}")
     motor_controller.stop_movement()
-    cam.stop_camera()
-    print("--- FULL ERROR TRACEBACK ---")
     traceback.print_exc()
+
+finally:
+    # This ensures the process actually dies so the launcher can start a new one
+    print("[*] Robot process terminated.")
+    os._exit(0)

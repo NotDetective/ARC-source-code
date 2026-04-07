@@ -2,48 +2,58 @@ import lgpio
 import subprocess
 import os
 import time
+import signal
 
-# Configuration
+# --- Configuration ---
 BUTTON_PIN = 24
-MAIN_SCRIPT = "main.py"
+MAIN_SCRIPT = "starter.py"  # Ensure this matches your robot filename
 VENV_FILE = "motor-env"
 
-# Setup lgpio
+process = None
 chip = lgpio.gpiochip_open(0)
-
-# Claim the pin as an input, detect falling edges (button press), and enable pull-up resistor
 lgpio.gpio_claim_alert(chip, BUTTON_PIN, lgpio.FALLING_EDGE, lgpio.SET_PULL_UP)
 
 
-# The callback function
-def run_main(chip, gpio, level, tick):
-    print("\n[+] Button pressed! Initiating launch sequence...")
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    script_path = os.path.join(dir_path, MAIN_SCRIPT)
-    venv_path = os.path.join(dir_path, f"{VENV_FILE}/bin/python3")
+def toggle_robot(chip, gpio, level, tick):
+    global process
 
-    if os.path.exists(venv_path):
-        print(f"Launching with venv: {venv_path}")
-        # This will block and run the robot script until it finishes or crashes
-        subprocess.run([venv_path, script_path])
-        print("\n[*] Robot script finished. Waiting for next button press...")
+    # If robot is running, stop it
+
+    if process is not None and process.poll() is None:
+        print("\n[!] Hold Confirmed: Stopping Robot...")
+        # Send custom signal so the OS doesn't accidentally trigger this
+        process.send_signal(signal.SIGUSR1)
+        process.wait()
+        process = None
+        print("[*] Robot is now OFF.")
+
+    # If robot is stopped, start it
     else:
-        print(f"[!] Error: Virtual environment not found at {venv_path}")
+        print("\n[+] Button Pressed: Starting Robot...")
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        script_path = os.path.join(dir_path, "main.py")  # Your actual robot code
+        venv_path = os.path.join(dir_path, f"{VENV_FILE}/bin/python3")
+
+        if os.path.exists(venv_path):
+            # Launch in background
+            process = subprocess.Popen([venv_path, script_path])
+            print(f"[*] Robot is now RUNNING (PID: {process.pid})")
+        else:
+            print(f"[!] Error: Virtual environment not found at {venv_path}")
 
 
 try:
-    print(f"System ready. Waiting for button press on GPIO {BUTTON_PIN}...")
+    print(f"--- Launcher Active ---")
+    print(f"Waiting for button on GPIO {BUTTON_PIN}...")
 
-    # Register the callback function to the pin
-    # lgpio handles the interrupt in the background
-    lgpio.callback(chip, BUTTON_PIN, lgpio.FALLING_EDGE, func=run_main)
+    lgpio.callback(chip, BUTTON_PIN, lgpio.FALLING_EDGE, func=toggle_robot)
 
-    # Keep the script alive
     while True:
         time.sleep(1)
 
 except KeyboardInterrupt:
-    print("\n[!] Shutting down launcher...")
+    print("\n[!] Launcher shutting down...")
+    if process and process.poll() is None:
+        process.terminate()
 finally:
-    # ALWAYS clean up
     lgpio.gpiochip_close(chip)

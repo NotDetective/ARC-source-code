@@ -25,10 +25,10 @@ class ServoController:
             time.sleep(step_delay)
 
     def lower_mg996r(self):
-        self.servo_mg996r.angle = 55
+        self.servo_mg996r.angle = 41
 
     def raise_mg996r(self):
-        self.servo_mg996r.angle = 180
+        self.servo_mg996r.angle = 170
 
     def open_sg90(self):
         self.__move_servo_slowly(self.servo_sg90, self.SERVO_CLOSE, self.SERVO_OPEN, 0.005)

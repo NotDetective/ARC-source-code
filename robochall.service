@@ -1,0 +1,14 @@
+[Unit]
+Description=Robochall Starter Script
+After=network.target
+
+[Service]
+ExecStart=/home/robochall8/Documents/robochall/motor-env/bin/python3 /home/robochall8/Documents/robochall/starter.py
+WorkingDirectory=/home/robochall8/Documents/robochall
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=robochall8
+
+[Install]
+WantedBy=multi-user.target
