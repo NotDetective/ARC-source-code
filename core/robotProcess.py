@@ -38,7 +38,7 @@ class RobotProcess:
         self.last_valid_target_time = 0
         self.last_valid_x = None
         self.last_valid_size = 0
-        self.VISION_GRACE_PERIOD = 1.5  # Seconds to remember the cup after it vanishes
+        self.VISION_GRACE_PERIOD = 1.0
 
     def run_robot_process(self):
         x, size = self.vision.get_data()
@@ -54,22 +54,17 @@ class RobotProcess:
 
         # Check if we are within the grace period
         is_target_recently_seen = False
-        if self.last_valid_target_time > 0:  # Only check if we've actually seen a target before
-            time_since_last_seen = current_time - self.last_valid_target_time
-            if time_since_last_seen < self.VISION_GRACE_PERIOD:
+        if self.last_valid_target_time > 0:
+            if (current_time - self.last_valid_target_time) < self.VISION_GRACE_PERIOD:
                 is_target_recently_seen = True
             else:
-                # Grace period expired, clear memory
                 self.last_valid_target_time = 0
                 self.last_valid_x = None
                 self.last_valid_size = 0
 
         # 1. PRIORITY: TARGET REACHED (Using current vision OR recent memory)
         if (x is not None and size > self.GOAL_SIZE_THRESHOLD) or is_target_recently_seen:
-            # Use current x if available, otherwise rely on the remembered x
             target_x = x if x is not None else self.last_valid_x
-
-            # Sanity check: Ensure target_x is valid before proceeding
             if target_x is not None:
                 return self.handle_target_reached(target_x, current_cmd, is_moving)
 
@@ -84,7 +79,6 @@ class RobotProcess:
 
         # 4. PRIORITY: APPROACH
         if x is not None or is_target_recently_seen:
-            # Use current x if available, otherwise use remembered x
             target_x = x if x is not None else self.last_valid_x
             if target_x is not None:
                 return self.handle_approach(target_x, current_cmd)
@@ -119,12 +113,12 @@ class RobotProcess:
             return
 
         correction = int((abs(error) / self.CENTER_POINT) * self.MAX_CORRECTION)
-        if error < 0:  # Target Left
+        if error < 0:
             self.motor_ctrl.set_motor_rpm("FL", self.BASE_RPM - correction)
             self.motor_ctrl.set_motor_rpm("BL", self.BASE_RPM - correction)
             self.motor_ctrl.set_motor_rpm("FR", self.BASE_RPM + correction)
             self.motor_ctrl.set_motor_rpm("BR", self.BASE_RPM + correction)
-        else:  # Target Right
+        else:
             self.motor_ctrl.set_motor_rpm("FR", self.BASE_RPM - correction)
             self.motor_ctrl.set_motor_rpm("BR", self.BASE_RPM - correction)
             self.motor_ctrl.set_motor_rpm("FL", self.BASE_RPM + correction)
@@ -138,28 +132,24 @@ class RobotProcess:
         dist_fl = self.sonar_ctrl.get_sonar_distance("FL")
         dist_fr = self.sonar_ctrl.get_sonar_distance("FR")
 
-        # 1. THE SONAR SKIP
         if 5 < dist_fm < self.COLLECT_THRESHOLD:
             print(f"Bypassing alignment. Sonar confirmed cup at {dist_fm}cm.")
             self.motor_ctrl.stop_movement()
             self.collect_cup()
-            self.last_valid_target_time = 0  # WIPE MEMORY
+            self.last_valid_target_time = 0
             return "COLLECTING_SONAR"
 
-        # 2. Safety Backwards
         if dist_fm < self.ALIGN_DISTANCE or dist_fl < self.ALIGN_DISTANCE or dist_fr < self.ALIGN_DISTANCE:
             if not isinstance(current_cmd, BackwardsCommand):
                 self.motor_ctrl.set_move_command(BackwardsCommand())
             return "BACKING_UP"
 
-        # 3. Final Alignment (Vision)
         if abs(error) <= self.MARGIN:
             self.motor_ctrl.stop_movement()
             self.collect_cup()
-            self.last_valid_target_time = 0  # WIPE MEMORY
+            self.last_valid_target_time = 0
             return "COLLECTING_VISION"
 
-        # 4. Precision Pivot
         self.motor_ctrl.set_motor_rpm("ALL", 20)
         if error > 0:
             if not isinstance(current_cmd, ClockwiseCommand):
@@ -196,4 +186,5 @@ class RobotProcess:
         time.sleep(1.0)
         self.servo_ctrl.open_sg90()
         time.sleep(0.5)
+
         print("--- Sequence Complete ---")

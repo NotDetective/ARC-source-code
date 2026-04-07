@@ -5,7 +5,6 @@ import time
 from flask import Flask, Response, render_template_string
 import webcolors
 
-
 class VisionSystem:
     def __init__(self, camera, target_hex="#FF00FF", port=5000, line_y=1200):
         # 1. Setup Camera
@@ -51,7 +50,6 @@ class VisionSystem:
             mask = cv2.dilate(mask, None, iterations=2)
 
             # --- 1. Draw the ROI Line on the display frame ---
-            # Arguments: (image, start_point, end_point, color_bgr, thickness)
             height, width = bgr_frame.shape[:2]
             cv2.line(bgr_frame, (0, self.line_y), (width, self.line_y), (255, 0, 0), 2)
 
@@ -74,13 +72,11 @@ class VisionSystem:
                                 valid_blobs.append((cnt, area, cx, cy))
 
                 if valid_blobs:
-                    # Pick the largest blob that passed the height test
                     largest_cnt, area, cx, cy = max(valid_blobs, key=lambda x: x[1])
 
                     found_x = cx
                     found_area = area
 
-                    # Draw detection visuals for the web feed
                     cv2.drawContours(bgr_frame, [largest_cnt], -1, (0, 255, 0), 2)
                     cv2.circle(bgr_frame, (cx, cy), 5, (0, 0, 255), -1)
 
